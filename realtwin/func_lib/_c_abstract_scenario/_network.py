@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2024, Oak Ridge National Laboratory                          #
+# Copyright (c) 2024-, Oak Ridge National Laboratory                          #
 # All rights reserved.                                                       #
 #                                                                            #
 # This file is part of RealTwin and is distributed under a GPL               #
@@ -221,7 +221,7 @@ class OSMRoad:
                                    for tup in NetworkVerticesTemp]
         elif isinstance(NetworkVertices, list):
             # Check if the list contains tuples
-            if all(isinstance(item, list) and len(item) == 2 for item in NetworkVertices):
+            if all(isinstance(item, (list, tuple)) and len(item) == 2 for item in NetworkVertices):
                 NetworkVerticesList = [(float(item[0]), float(item[1])) for item in NetworkVertices]
             else:
                 raise ValueError("Invalid format: List must contain list of [lon, lat].")
