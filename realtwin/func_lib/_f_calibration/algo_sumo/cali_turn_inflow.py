@@ -249,7 +249,7 @@ class TurnInflowCali:
         return True
 
     def run_GA(self, **kwargs) -> tuple:
-        """Run Genetic Algorithm (GA) for behavior optimization.
+        """Run Genetic Algorithm (GA) for turn and inflow optimization.
 
         Note:
             1. The `init_solution` parameter is used to provide initial solutions for the population. None by default.
@@ -350,7 +350,7 @@ class TurnInflowCali:
         return (g_best, model_ga)
 
     def run_SA(self, **kwargs) -> tuple:
-        """Run Simulated Annealing (SA) for behavior optimization.
+        """Run Simulated Annealing (SA) for Turn and inflow optimization.
 
         See Also:
             https://mealpy.readthedocs.io/en/latest/pages/models/mealpy.physics_based.html#module-mealpy.physics_based.SA
@@ -423,7 +423,7 @@ class TurnInflowCali:
         return (g_best, model_sa)
 
     def run_TS(self, **kwargs) -> tuple:
-        """Run Tabu Search (TS) for behavior optimization.
+        """Run Tabu Search (TS) for Turn and Inflow optimization.
 
         See Also:
             https://github.com/thieu1995/mealpy/blob/master/mealpy/math_based/TS.py
@@ -472,6 +472,10 @@ class TurnInflowCali:
         fitness_func_turn_flow(g_best.solution, scenario_config=self.scenario_config)
 
         return (g_best, model_ts)
+
+    def run_BO(self, **kwargs) -> tuple:
+        """Run Bayesian Optimization (BO) for Turn and Inflow optimization."""
+        pass
 
     def _clean_up(self):
         """Clean up the temporary files generated during the calibration process."""
