@@ -35,8 +35,13 @@ class BayesianOptimization:
         self.all_points = []
         self.run_times = []
 
-    def optimize(self, total_run: int = 10):
-        """ Perform Bayesian Optimization over multiple runs. """
+    def optimize(self, total_run: int = 10, output_dir: str = "."):
+        """ Perform Bayesian Optimization over multiple runs.
+
+        Args:
+            total_run (int): Number of optimization runs to perform.
+            output_dir (str): Directory to save output files.
+        """
 
         # TDD
         if not isinstance(total_run, int):
@@ -53,12 +58,11 @@ class BayesianOptimization:
         temp_evaluated_points = []
 
         for run in range(total_run):
-            print(f"\n--- Run {run + 1}/{total_run} ---")
-            print("Starting SUMO-based Bayesian optimization...")
-            print(f"Dimensions: {self.num_params}")
-            print(f"lb: {self.lower_bounds}, ub: {self.upper_bounds}")
-            print(f"Target: {self.target} with tolerance: {self.tolerance}")
-            print(f"Maximum evaluations: {self.max_evaluations}")
+            print("  Starting SUMO-based Bayesian optimization...")
+            print(f"  Dimensions: {self.num_params}")
+            print(f"  lb: {self.lower_bounds}, ub: {self.upper_bounds}")
+            print(f"  Target: {self.target} with tolerance: {self.tolerance}")
+            print(f"  Maximum evaluations: {self.max_evaluations}")
 
             start_time = time.time()
 
@@ -78,11 +82,11 @@ class BayesianOptimization:
             elapsed_time = end_time - start_time
             self.run_times.append(elapsed_time)
 
-            print("\nResults:")
-            print(f"Best function value found: {f_best}")
-            print(f"Best point found: {x_best}")
-            print(f"Number of evaluations performed: {len(evaluated_values)}")
-            print(f"Elapsed time for run {run + 1}: {elapsed_time:.2f} seconds")
+            print("\n  Results:")
+            print(f"  Best function value found: {f_best}")
+            print(f"  Best point found: {x_best}")
+            print(f"  Number of evaluations performed: {len(evaluated_values)}")
+            print(f"  Elapsed time for run {run + 1}: {elapsed_time:.2f} seconds")
 
             temp_evaluated_values.append(evaluated_values)
             temp_evaluated_points.append(evaluated_points)
