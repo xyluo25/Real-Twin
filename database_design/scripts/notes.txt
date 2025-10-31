@@ -1,0 +1,6 @@
+
+1. how to create ER Diagram from DBeaver
+    1.1 select the geo-spatial DB
+    1.2 right click to create -> Others
+    1.3 select ER Diagram
+    1.4 follow instruction from click in 1.3

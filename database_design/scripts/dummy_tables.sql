@@ -3,9 +3,11 @@ BEGIN;
 -- 0) Extensions and schemas
 CREATE EXTENSION IF NOT EXISTS postgis;
 
-CREATE SCHEMA IF NOT EXISTS net;  -- geometry: node, link, lane, movement
-CREATE SCHEMA IF NOT EXISTS sig;  -- signals
+CREATE SCHEMA IF NOT EXISTS network;  -- geometry: node, link, lane, movement
+CREATE SCHEMA IF NOT EXISTS controller;  -- signals
 CREATE SCHEMA IF NOT EXISTS demand;  -- demand
+
+-- pre-define units but not specify unit in field name
 
 -- 1) Shared types
 DO $$
@@ -14,50 +16,26 @@ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'road_class') THEN
 END IF;
 
 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lane_type') THEN CREATE TYPE lane_type AS ENUM(
-    'through',
-    'left',
-    'right',
-    'u_turn',
-    'through_right',
-    'through_left',
-    'through_right_left',
-    'bus',
-    'bike',
-    'parking',
-    'shoulder',
-    'aux'
+    'through', 'left', 'right', 'u_turn',
+    'through_right', 'through_left', 'through_right_left',
+    'bus', 'bike', 'parking', 'shoulder', 'aux'
 );
 END IF;
 
 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'access_mode') THEN CREATE TYPE access_mode AS ENUM(
-    'all',
-    'car',
-    'truck',
-    'bus',
-    'bike',
-    'ped'
-);
+    'all', 'car', 'truck', 'bus', 'bike', 'ped', 'hov', 'reversible', 'hot', 'express');
 END IF;
 
 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'signal_control_type') THEN CREATE TYPE signal_control_type AS ENUM(
-    'fixed_time',
-    'actuated',
-    'adaptive'
-);
+    'fixed_time', 'actuated', 'adaptive');
 END IF;
 
 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'phase_type') THEN CREATE TYPE phase_type AS ENUM(
-    'permitted',
-    'protected',
-    'flashing'
-);
+    'permitted', 'protected', 'flashing');
 END IF;
 
 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'phase_type') THEN CREATE TYPE phase_type AS ENUM(
-    'permitted',
-    'protected',
-    'flashing'
-);
+    'permitted', 'protected', 'flashing');
 END IF;
 
 END $$;
@@ -91,7 +69,7 @@ DROP TABLE IF EXISTS net.node CASCADE;
 
 CREATE TABLE net.node (
     node_id BIGSERIAL PRIMARY KEY,
-    node_type TEXT, -- intersection, centroid, stop_bar, etc.
+    node_type TEXT, -- intersection, signal, centroid, stop_bar, etc.
     x DOUBLE PRECISION NOT NULL,
     y DOUBLE PRECISION NOT NULL,
     srid INTEGER DEFAULT 4326,
@@ -145,24 +123,24 @@ CREATE INDEX IF NOT EXISTS idx_lane_link ON net.lane (link_id);
 
 CREATE TABLE net.movement (
     movement_id BIGSERIAL PRIMARY KEY,
-    via_node_id BIGINT NOT NULL REFERENCES net.node (node_id) ON DELETE CASCADE,
+    -- via_node_id BIGINT NOT NULL REFERENCES net.node (node_id) ON DELETE CASCADE,
     from_link_id BIGINT NOT NULL REFERENCES net.link (link_id) ON DELETE CASCADE,
     to_link_id BIGINT NOT NULL REFERENCES net.link (link_id) ON DELETE CASCADE,
     from_lane_id BIGINT REFERENCES net.lane (lane_id) ON DELETE SET NULL,
     to_lane_id BIGINT REFERENCES net.lane (lane_id) ON DELETE SET NULL,
-    turn_type lane_type, -- left, through, right, u_turn
-    is_allowed BOOLEAN DEFAULT TRUE,
-    cost_penalty_s DOUBLE PRECISION,
-    UNIQUE (
-        via_node_id,
-        from_link_id,
-        to_link_id,
-        COALESCE(from_lane_id, 0),
-        COALESCE(to_lane_id, 0)
-    )
+    turn_type lane_type -- left, through, right, u_turn
+    -- is_allowed BOOLEAN DEFAULT TRUE,
+    -- cost_penalty_s DOUBLE PRECISION
+    -- UNIQUE (
+    --     via_node_id,
+    --     from_link_id,
+    --     to_link_id,
+    --     COALESCE(from_lane_id, 0),
+    --     COALESCE(to_lane_id, 0)
+    -- )
 );
 
-CREATE INDEX IF NOT EXISTS idx_mvmt_via ON net.movement (via_node_id);
+--CREATE INDEX IF NOT EXISTS idx_mvmt_via ON net.movement (via_node_id);
 
 CREATE INDEX IF NOT EXISTS idx_mvmt_from_to ON net.movement (from_link_id, to_link_id);
 
@@ -246,7 +224,6 @@ CREATE TABLE sig.timing_plan_phase (
 -- Zones store polygons for TAZ and optional centroids
 CREATE TABLE demand.zone (
     zone_id BIGSERIAL PRIMARY KEY,
-    ext_id TEXT UNIQUE,
     name TEXT,
     centroid_x DOUBLE PRECISION,
     centroid_y DOUBLE PRECISION,
@@ -257,45 +234,48 @@ CREATE TABLE demand.zone (
 CREATE INDEX IF NOT EXISTS idx_zone_geom ON demand.zone USING GIST (geom);
 
 -- Connectors between zone and network
-CREATE TABLE demand.centroid_connector (
-    connector_id BIGSERIAL PRIMARY KEY,
-    zone_id BIGINT NOT NULL REFERENCES demand.zone (zone_id) ON DELETE CASCADE,
-    node_id BIGINT NOT NULL REFERENCES net.node (node_id) ON DELETE CASCADE,
-    impedance_s DOUBLE PRECISION,
-    UNIQUE (zone_id, node_id)
-);
+--CREATE TABLE demand.centroid_connector (
+--    connector_id BIGSERIAL PRIMARY KEY,
+--    zone_id BIGINT NOT NULL REFERENCES demand.zone (zone_id) ON DELETE CASCADE,
+--    node_id BIGINT NOT NULL REFERENCES net.node (node_id) ON DELETE CASCADE,
+--    impedance_s DOUBLE PRECISION,
+--    UNIQUE (zone_id, node_id)
+--);
 
 -- OD matrices and entries
 CREATE TABLE demand.od_matrix (
-    od_id BIGSERIAL PRIMARY KEY,
+    from_zone_id BIGINT NOT NULL REFERENCES demand.zone (zone_id) ON DELETE CASCADE,
+    to_zone_id BIGINT NOT NULL REFERENCES demand.zone (zone_id) ON DELETE cascade,
+    from_node_id BIGINT NOT NULL REFERENCES net.node (node_id) ON DELETE CASCADE,
+    to_node_id BIGINT NOT NULL REFERENCES net.node (node_id) ON DELETE cascade,
     name TEXT NOT NULL,
     description TEXT,
     base_time TIMESTAMP,
     time_period_min INTEGER NOT NULL -- slice resolution
 );
 
-CREATE TABLE demand.od_entry (
-    od_id BIGINT NOT NULL REFERENCES demand.od_matrix (od_id) ON DELETE CASCADE,
-    slice_index INTEGER NOT NULL,
-    o_zone_id BIGINT NOT NULL REFERENCES demand.zone (zone_id) ON DELETE CASCADE,
-    d_zone_id BIGINT NOT NULL REFERENCES demand.zone (zone_id) ON DELETE CASCADE,
-    demand_pcu DOUBLE PRECISION NOT NULL,
-    mode access_mode DEFAULT 'car',
-    PRIMARY KEY (
-        od_id,
-        slice_index,
-        o_zone_id,
-        d_zone_id,
-        mode
-    )
-);
-
-CREATE INDEX IF NOT EXISTS idx_odentry_lookup ON demand.od_entry (
-    od_id,
-    slice_index,
-    o_zone_id,
-    d_zone_id
-);
+--CREATE TABLE demand.od_entry (
+--    od_id BIGINT NOT NULL REFERENCES demand.od_matrix (od_id) ON DELETE CASCADE,
+--    slice_index INTEGER NOT NULL,
+--    o_zone_id BIGINT NOT NULL REFERENCES demand.zone (zone_id) ON DELETE CASCADE,
+--    d_zone_id BIGINT NOT NULL REFERENCES demand.zone (zone_id) ON DELETE CASCADE,
+--    demand_pcu DOUBLE PRECISION NOT NULL,
+--    mode access_mode DEFAULT 'car',
+--    PRIMARY KEY (
+--        od_id,
+--        slice_index,
+--        o_zone_id,
+--        d_zone_id,
+--        mode
+--    )
+--);
+--
+--CREATE INDEX IF NOT EXISTS idx_odentry_lookup ON demand.od_entry (
+--    od_id,
+--    slice_index,
+--    o_zone_id,
+--    d_zone_id
+--);
 
 -- Turning movement demand tied to geometric movements
 -- Store by discrete slice or exact timestamp
@@ -304,8 +284,9 @@ CREATE TABLE demand.turning_flow (
   movement_id    BIGINT NOT NULL REFERENCES net.movement(movement_id) ON DELETE CASCADE,
   time_slice     INTEGER,                        -- optional if using slices
   at_time        TIMESTAMP,                      -- optional if using timestamps
-  volume_veh     DOUBLE PRECISION NOT NULL,      -- vehicles in slice or rate
-  UNIQUE (movement_id, COALESCE(time_slice,-1), COALESCE(at_time, '0001-01-01'::timestamp))
+  volume_veh     DOUBLE PRECISION,        -- optional vehicles in slice or rate
+  turn_ratio   DOUBLE PRECISION          -- optional turn ratio
+--   UNIQUE (movement_id, COALESCE(time_slice,-1), COALESCE(at_time, '0001-01-01'::timestamp))
 );
 
 CREATE INDEX IF NOT EXISTS idx_tf_movement ON demand.turning_flow (movement_id);
@@ -315,8 +296,8 @@ CREATE TABLE demand.path (
   path_id        BIGSERIAL PRIMARY KEY,
   od_id          BIGINT REFERENCES demand.od_matrix(od_id) ON DELETE SET NULL,
   slice_index    INTEGER,
-  o_zone_id      BIGINT REFERENCES demand.zone(zone_id) ON DELETE SET NULL,
-  d_zone_id      BIGINT REFERENCES demand.zone(zone_id) ON DELETE SET NULL,
+  from_zone_id      BIGINT REFERENCES demand.zone(zone_id) ON DELETE SET NULL,
+  to_zone_id      BIGINT REFERENCES demand.zone(zone_id) ON DELETE SET NULL,
   link_seq       BIGINT[]                       -- ordered net.link ids
 );
 
@@ -324,8 +305,8 @@ CREATE TABLE demand.path (
 CREATE TABLE demand.vehicle_trip (
     trip_id BIGSERIAL PRIMARY KEY,
     depart_time TIMESTAMP NOT NULL,
-    origin_zone_id BIGINT REFERENCES demand.zone (zone_id),
-    dest_zone_id BIGINT REFERENCES demand.zone (zone_id),
+    from_zone_id BIGINT REFERENCES demand.zone (zone_id),
+    to_zone_id BIGINT REFERENCES demand.zone (zone_id),
     path_id BIGINT REFERENCES demand.path (path_id),
     vehicle_type TEXT DEFAULT 'car',
     value_of_time DOUBLE PRECISION
