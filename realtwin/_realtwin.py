@@ -471,16 +471,16 @@ class RealTwin:
         # check if the selected algorithm is supported within the package
         # convert the algorithm to lower case
         sel_algo = {key: value.lower() for key, value in sel_algo.items()}
-        if (algo := sel_algo["turn_inflow"]) not in ["ga", "sa", "ts"]:
+        if (algo := sel_algo["turn_inflow"]) not in ["ga", "sa", "ts", "bo"]:
             console.print(f"  [dim cyan]:Selected algorithms are {sel_algo}")
             console.print(f"  [dim cyan]:{algo} for turn and inflow calibration is not supported. "
                           "Must be one of ['ga', 'sa', 'ts']")
             return False
 
-        if (algo := sel_algo["behavior"]) not in ["ga", "sa", "ts"]:
+        if (algo := sel_algo["behavior"]) not in ["ga", "sa", "ts", "bo"]:
             console.print(f"  [dim cyan]:Selected algorithms are {sel_algo}")
-            console.print(f"  [div cyan]:{algo} for behavior calibration is not supported. "
-                          "Must be one of ['ga', 'sa', 'ts']")
+            console.print(f"  [dim cyan]:{algo} for behavior calibration is not supported. "
+                          "Must be one of ['ga', 'sa', 'ts', 'bo']")
             return False
 
         # parse user additional parameters for calibration

@@ -2,11 +2,111 @@ import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel, ExpSineSquared, Matern, RationalQuadratic
 from scipy.stats import norm
-import generate_random_points as grp
+import numpy as np
+from scipy.spatial.distance import pdist, squareform
+from sklearn.cluster import kmeans_plusplus
+
+
+def generateRandom(x_mins: np.array, x_maxs: np.array, num_points: int) -> np.array:
+    """
+    Generate random points with each dimension between corresponding min and max values.
+
+    Args:
+        x_mins: Array of minimum values for each dimension
+        x_maxs: Array of maximum values for each dimension
+        num_points: Number of points to generate
+        rng: Optional numpy.random.Generator instance for reproducibility
+
+    Returns:
+        Array of shape (num_points, len(x_mins)) with random points
+    """
+    dims = len(x_mins)
+
+    # Use a Generator for random numbers (recommended over legacy numpy.random)
+    rng = np.random.default_rng(seed=812)
+
+    # Leverage broadcasting: rng.uniform accepts array-like low/high and will broadcast to the output shape
+    x = rng.uniform(x_mins, x_maxs, size=(num_points, dims))
+
+    return x
+
+
+def get_furthest_points(points: np.array, k: int) -> list:
+    """Return k points that are furthest from each other in space using a greedy approach.
+    Optimized for large inputs using vectorized operations.
+
+    Args:
+        points: Array of shape (n, d) where n is the number of points and d is the dimension
+        k: Number of points to select
+
+    Returns:
+        Indices of the k selected points
+    """
+    n = len(points)
+
+    if k > n:
+        raise ValueError(
+            "k cannot be greater than the number of points provided.")
+
+    if k == n:
+        return list(range(n))
+
+    if k <= 0:
+        return []
+
+    if n <= 60000:  # For very large datasets, use a more efficient method
+
+        # Calculate all pairwise distances once
+        distances = squareform(pdist(points))
+
+        # Start with the two points that are furthest apart
+        i, j = np.unravel_index(np.argmax(distances), distances.shape)
+
+        selected = [i, j]
+        selected_set = set(selected)  # For O(1) lookups
+
+        # Create a mask for unselected points
+        mask = np.ones(n, dtype=bool)
+        mask[selected] = False
+
+        while len(selected) < k:
+            # Use different strategies based on selection size for best performance
+            if len(selected) > 10000:  # For very large selections
+                # Only calculate distances to the newly added point
+                new_distances = distances[selected[-1], mask]
+                if len(selected) == 2:  # First iteration after initial two points
+                    min_distances = np.minimum(
+                        distances[selected[0], mask], new_distances)
+                else:
+                    min_distances = np.minimum(min_distances, new_distances)
+            else:
+                # For smaller selections, this vectorized approach is faster
+                # Calculate min distance from each unselected point to any selected point
+                min_distances = np.min(
+                    distances[np.ix_(selected, mask)], axis=0)
+
+            # Find the point with maximum minimum distance
+            max_idx = np.argmax(min_distances)
+            next_point = np.arange(n)[mask][max_idx]
+
+            # Add the point to selected
+            selected.append(next_point)
+            selected_set.add(next_point)
+
+            # Update the mask
+            mask[next_point] = False
+
+        return selected
+    else:
+        centers, indices = kmeans_plusplus(
+            points, n_clusters=k, random_state=0)
+        selected = list(indices[:k])
+        return selected
 
 
 def fit_high_fidelity_model(x_high_fidelity, f_high_fidelity, kernel_type='RBF'):
     """Fit a Gaussian Process model on the high fidelity data."""
+
     # Choose kernel based on the kernel_type input
     if kernel_type == 'RBF':
         kernel = ConstantKernel(1.0) * RBF(length_scale=1.0)
@@ -29,52 +129,36 @@ def fit_high_fidelity_model(x_high_fidelity, f_high_fidelity, kernel_type='RBF')
     return gp
 
 
-def dynamic_online_optimization(x_norm, f_norm, x_mean, x_std, f_mean, f_std, evaluation_function, gp, candidate_points, target, tolerance, max_evals, kernel='RBF', beta=1, minimize=True):
-    """
-    Performs dynamic optimization to minimize or maximize the objective function.
+def dynamic_online_optimization(x_norm, f_norm,
+                                x_mean, x_std, f_mean, f_std,
+                                evaluation_function, gp, candidate_points,
+                                target, tolerance, max_evals,
+                                kernel='RBF', beta=1, minimize=True):
+    """ Performs dynamic optimization to minimize or maximize the objective function.
 
-    Parameters:
-    -----------
-    x_norm : array-like
-        Normalized feature data points that have been evaluated
-    f_norm : array-like
-        Normalized function values corresponding to x_norm
-    x_mean : array-like
-        Mean values used for feature normalization
-    x_std : array-like
-        Standard deviation values used for feature normalization
-    f_mean : float
-        Mean value used for objective function normalization
-    f_std : float
-        Standard deviation used for objective function normalization
-    evaluation_function : callable
-        Function that evaluates new points in unnormalized space
-    gp : object
-        Gaussian Process model fitted on normalized data
-    candidate_points : array-like
-        Normalized candidate points to choose from for evaluation
-    target : float
-        Target value to reach (in unnormalized space)
-    tolerance : float
-        Tolerance around the target (in unnormalized space)
-    max_evals : int
-        Maximum number of high-fidelity evaluations to perform
-    beta : float, optional
-        Exploration-exploitation trade-off parameter (default=1)
-    minimize : bool, optional
-        If True, minimize the objective function; if False, maximize it (default=True)
+    Args:
+        x_norm: Normalized feature data points that have been evaluated
+        f_norm: Normalized function values corresponding to x_norm
+        x_mean: Mean values used for feature normalization
+        x_std: Standard deviation values used for feature normalization
+        f_mean: Mean value used for objective function normalization
+        f_std: Standard deviation used for objective function normalization
+        evaluation_function: Function that evaluates new points in unnormalized space
+        gp: Gaussian Process model fitted on normalized data
+        candidate_points: Normalized candidate points to choose from for evaluation
+        target: Target value to reach (in unnormalized space)
+        tolerance: Tolerance around the target (in unnormalized space)
+        max_evals: Maximum number of high-fidelity evaluations to perform
+        beta: Exploration-exploitation trade-off parameter (default=1)
+        minimize: If True, minimize the objective function; if False, maximize it (default=True)
 
     Returns:
-    --------
-    f_best : float
-        Best function value found (unnormalized)
-    x_best : array-like
-        Point corresponding to best function value (unnormalized)
-    evaluated_points : list
-        List of points evaluated during optimization (unnormalized)
-    evaluated_values : list
-        List of function values for evaluated points (unnormalized)
+        f_best: Best function value found (unnormalized)
+        x_best: Point corresponding to best function value (unnormalized)
+        evaluated_points: List of points evaluated during optimization (unnormalized)
+        evaluated_values: List of function values for evaluated points (unnormalized)
     """
+
     # Initialize with the current best value based on optimization direction
     if minimize:
         f_best_norm = np.min(f_norm)
@@ -94,19 +178,18 @@ def dynamic_online_optimization(x_norm, f_norm, x_mean, x_std, f_mean, f_std, ev
     evaluated_values = []
 
     beta_modifier = 0.8
+
     # Convert target to normalized space for comparison
-    target_norm = (target - f_mean) / f_std
+    # target_norm = (target - f_mean) / f_std
 
     for eval_iter in range(max_evals):
         # Check if we've already reached the target within tolerance
         if (f_best - target) <= tolerance:
-            print(
-                f"Target {target} reached within tolerance {tolerance} after {eval_iter} evaluations.")
+            print(f"Target {target} reached within tolerance {tolerance} after {eval_iter} evaluations.")
             break
 
         # Adjust beta based on iterations left
-        beta = min(1, max(beta * (max_evals - eval_iter - 1) /
-                   (max_evals - eval_iter), 0))
+        beta = min(1, max(beta * (max_evals - eval_iter - 1) / (max_evals - eval_iter), 0))
 
         # Get predictions for all candidate points
         mu, sigma = gp.predict(candidate_points, return_std=True)
@@ -129,18 +212,15 @@ def dynamic_online_optimization(x_norm, f_norm, x_mean, x_std, f_mean, f_std, ev
 
         # Calculate expected improvement
         EI = np.zeros_like(mu)
-        EI[mask] = improvement[mask] * \
-            norm.cdf(Z[mask]) + sigma_safe[mask] * norm.pdf(Z[mask])
+        EI[mask] = improvement[mask] * norm.cdf(Z[mask]) + sigma_safe[mask] * norm.pdf(Z[mask])
 
         # Normalize metrics to [0,1] range for combining
-        EI_percentile = (EI - EI.min()) / (EI.max() - EI.min() +
-                                           1e-10) if EI.size > 1 else np.ones_like(EI)
+        EI_percentile = (EI - EI.min()) / (EI.max() - EI.min() + 1e-10) if EI.size > 1 else np.ones_like(EI)
         uncertainty_percentile = (sigma_safe - sigma_safe.min()) / (sigma_safe.max(
         ) - sigma_safe.min() + 1e-10) if sigma_safe.size > 1 else np.ones_like(sigma_safe)
 
         # Combine metrics with exploration-exploitation trade-off
-        acquisition = (1 - beta) * EI_percentile + \
-            beta * uncertainty_percentile
+        acquisition = (1 - beta) * EI_percentile + beta * uncertainty_percentile
 
         # Select best candidate point
         best_candidate_idx = np.argmax(acquisition)
@@ -169,8 +249,7 @@ def dynamic_online_optimization(x_norm, f_norm, x_mean, x_std, f_mean, f_std, ev
             best_index = len(x_norm) + eval_iter
 
         # Remove selected point from candidates to avoid selecting it again
-        candidate_points = np.delete(
-            candidate_points, best_candidate_idx, axis=0)
+        candidate_points = np.delete(candidate_points, best_candidate_idx, axis=0)
 
         # Check if we've run out of candidate points
         if candidate_points.shape[0] == 0:
@@ -180,6 +259,8 @@ def dynamic_online_optimization(x_norm, f_norm, x_mean, x_std, f_mean, f_std, ev
         # Update GP with the new point
         x_norm = np.vstack((x_norm, x_new_norm))
         f_norm = np.append(f_norm, f_new_norm)
+
+        # Gaussian Process model update
         gp = fit_high_fidelity_model(x_norm, f_norm, kernel_type=kernel)
 
         # update beta if close to target
@@ -189,31 +270,35 @@ def dynamic_online_optimization(x_norm, f_norm, x_mean, x_std, f_mean, f_std, ev
     return f_best, x_best, evaluated_points, evaluated_values
 
 
-def online_optimization(num_params, variable_bounds, evaluation_function,
-                        tolerance=1, target=0, random_points=10000, max_evaluations=100,
-                        kernel_type='RBF', obj='min'):
+def online_optimization(num_params: int, variable_bounds: tuple,
+                        evaluation_function,
+                        tolerance: int = 1, target: int = 0,
+                        random_points: int = 10000, max_evaluations: int = 100,
+                        kernel_type: str = 'RBF', obj: str = 'min'):
+
     # num_initial_points = int(np.ceil(2+num_params**(4/3)))
     num_initial_points = int(np.ceil(2 + num_params * (4 / 3)))
     print(f"Number of initial points: {num_initial_points}")
     if num_initial_points + 1 > max_evaluations:
         raise ValueError("Not enough evaluations for initial points.")
+
     # Generate initial points
-    x_random = grp.generateRandom(variable_bounds[0],
-                                  x_maxs=variable_bounds[1],
-                                  num_points=random_points)
+    x_random = generateRandom(variable_bounds[0],
+                              x_maxs=variable_bounds[1],
+                              num_points=random_points)
     # Normalize the data
     x_mean = np.mean(x_random, axis=0)
     x_std = np.std(x_random, axis=0)
     x_random = (x_random - x_mean) / x_std
 
     # Select num_initial_points that are furthest apart
-    selected_indices = grp.get_furthest_points(x_random, num_initial_points)
+    selected_indices = get_furthest_points(x_random, num_initial_points)
     x_initial = x_random[selected_indices]
 
     # Evaluate initial unnormalized points
     x_initial_unnorm = x_initial * x_std + x_mean
-    f_initial_unnorm = np.array([evaluation_function(x)
-                                for x in x_initial_unnorm])
+    f_initial_unnorm = np.array([evaluation_function(x) for x in x_initial_unnorm])
+
     # Normalize the function values
     f_mean = np.mean(f_initial_unnorm)
     f_std = np.std(f_initial_unnorm)
@@ -234,9 +319,11 @@ def online_optimization(num_params, variable_bounds, evaluation_function,
         evaluation_function, gp, candidate_points, target, tolerance,
         max_evals=max_evaluations - num_initial_points, kernel=kernel_type
     )
+
     # add the initial points to the evaluated points and values
     evaluated_points = x_initial_unnorm.tolist() + evaluated_points
     evaluated_values = f_initial_unnorm.tolist() + evaluated_values
+
     return f_best, x_best, evaluated_points, evaluated_values
 
 

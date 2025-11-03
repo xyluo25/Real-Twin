@@ -107,30 +107,30 @@ def cali_sumo(*, sel_algo: dict = None, input_config: dict = None, verbose: bool
     turn_inflow._clean_up()
 
     print("\n  :Optimize Behavior parameters based on the optimized turn and inflow...")
-    scenario_config_behavior = prepare_scenario_config_behavior(input_config)
-    if "sel_behavior_routes" in kwargs:
-        scenario_config_behavior["sel_behavior_routes"] = kwargs["sel_behavior_routes"]
-    else:
-        # automatically select two routes from network
-        dir_behavior = scenario_config_behavior["dir_behavior"]
-        network_name = input_config.get("Network").get("NetworkName")
-        path_net = Path(dir_behavior) / f"{network_name}.net.xml"
-        path_route = Path(dir_behavior) / f"{network_name}.rou.xml"
-        path_report = Path(dir_behavior) / "selected_routes_travel_time_map.html"
-        google_api = ""
-        routes_list, time_list, edge_list = auto_select_two_routes(path_route, path_net,
-                                                                   api_key=google_api, path_report=path_report)
-        print(f"  : selected routes: {routes_list}")
-        print(f"  : selected travel time: {time_list}")
-        print(f"  : selected edge list: {edge_list}")
-        sel_route_dict = {}
-        route_id = 1
-        for route_name, travel_time, edge_id_list in zip(routes_list, time_list, edge_list):
-            sel_route_dict[f"route_{route_id}"] = {"time": travel_time,
-                                                   "edge_list": edge_id_list,
-                                                   "route_list": route_name}
-            route_id += 1
-        scenario_config_behavior["sel_behavior_routes"] = sel_route_dict
+    scenario_config_behavior = prepare_scenario_config_behavior(input_config, **kwargs)
+    # if "sel_behavior_routes" in kwargs:
+    #     scenario_config_behavior["sel_behavior_routes"] = kwargs["sel_behavior_routes"]
+    # else:
+    #     # automatically select two routes from network
+    #     dir_behavior = scenario_config_behavior["dir_behavior"]
+    #     network_name = input_config.get("Network").get("NetworkName")
+    #     path_net = Path(dir_behavior) / f"{network_name}.net.xml"
+    #     path_route = Path(dir_behavior) / f"{network_name}.rou.xml"
+    #     path_report = Path(dir_behavior) / "selected_routes_travel_time_map.html"
+    #     google_api = ""
+    #     routes_list, time_list, edge_list = auto_select_two_routes(path_route, path_net,
+    #                                                                api_key=google_api, path_report=path_report)
+    #     print(f"  : selected routes: {routes_list}")
+    #     print(f"  : selected travel time: {time_list}")
+    #     print(f"  : selected edge list: {edge_list}")
+    #     sel_route_dict = {}
+    #     route_id = 1
+    #     for route_name, travel_time, edge_id_list in zip(routes_list, time_list, edge_list):
+    #         sel_route_dict[f"route_{route_id}"] = {"time": travel_time,
+    #                                                "edge_list": edge_id_list,
+    #                                                "route_list": route_name}
+    #         route_id += 1
+    #     scenario_config_behavior["sel_behavior_routes"] = sel_route_dict
     print(f"  \n:Selected behavior routes: {scenario_config_behavior['sel_behavior_routes']}\n")
     behavior = BehaviorCali(scenario_config_behavior, algo_config_behavior, verbose=verbose)
 
@@ -225,7 +225,7 @@ def prepare_scenario_config_turn_inflow(input_config: dict) -> dict:
     return scenario_config_dict
 
 
-def prepare_scenario_config_behavior(input_config: dict) -> dict:
+def prepare_scenario_config_behavior(input_config: dict, **kwargs) -> dict:
 
     scenario_config_behavior = input_config.get("Calibration").get("scenario_config")
     network_name = input_config.get("Network").get("NetworkName")
@@ -257,6 +257,32 @@ def prepare_scenario_config_behavior(input_config: dict) -> dict:
 
     scenario_config_behavior["path_turn"] = f"{network_name}.turn.xml"
     scenario_config_behavior["path_inflow"] = f"{network_name}.flow.xml"
+
+    # assign selected behavior routes
+    if "sel_behavior_routes" in kwargs:
+        scenario_config_behavior["sel_behavior_routes"] = kwargs["sel_behavior_routes"]
+    else:
+        # automatically select two routes from network
+        dir_behavior = scenario_config_behavior["dir_behavior"]
+        network_name = input_config.get("Network").get("NetworkName")
+        path_net = Path(dir_behavior) / f"{network_name}.net.xml"
+        path_route = Path(dir_behavior) / f"{network_name}.rou.xml"
+        path_report = Path(dir_behavior) / \
+            "selected_routes_travel_time_map.html"
+        google_api = ""
+        routes_list, time_list, edge_list = auto_select_two_routes(path_route, path_net,
+                                                                   api_key=google_api, path_report=path_report)
+        print(f"  : selected routes: {routes_list}")
+        print(f"  : selected travel time: {time_list}")
+        print(f"  : selected edge list: {edge_list}")
+        sel_route_dict = {}
+        route_id = 1
+        for route_name, travel_time, edge_id_list in zip(routes_list, time_list, edge_list):
+            sel_route_dict[f"route_{route_id}"] = {"time": travel_time,
+                                                   "edge_list": edge_id_list,
+                                                   "route_list": route_name}
+            route_id += 1
+        scenario_config_behavior["sel_behavior_routes"] = sel_route_dict
     return scenario_config_behavior
 
 

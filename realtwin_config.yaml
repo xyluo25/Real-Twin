@@ -53,3 +53,11 @@ Calibration:
         tabu_size: 10  # maximum size of the tabu list [2, 10000]
         neighbour_size: 10  # size of the neighborhood for generating candidate solutions [2, 10000]
         perturbation_scale: 0.05  # scale of perturbation for the solution [0, 100]
+
+    bo_config:  # bayesian optimization configuration
+        kernel_type: "RBF"  #  Matern, RationalQuadratic, ExpSineSquared, Combined
+        tolerance: 3  # tolerance for convergence [1, 100]
+        target: 0
+        random_points: 4000
+        max_evaluations: 100
+        total_run: 10  # total run times for BO [1, 1000]
