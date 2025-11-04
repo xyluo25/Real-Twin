@@ -110,23 +110,23 @@ def fit_high_fidelity_model(x_high_fidelity, f_high_fidelity, kernel_type='RBF')
 
     # Choose kernel based on the kernel_type input
     if kernel_type == 'RBF':
-        kernel = ConstantKernel(1.0) * RBF(length_scale=1.0)
+        kernel = ConstantKernel(1.0) * RBF(length_scale=1.0, length_scale_bounds=(1e-5, 1e6))
     elif kernel_type == 'Matern':
-        kernel = ConstantKernel(1.0) * Matern(length_scale=1.0, nu=2.5)
+        kernel = ConstantKernel(1.0) * Matern(length_scale=1.0, nu=2.5, length_scale_bounds=(1e-5, 1e6))
     elif kernel_type == 'RationalQuadratic':
         kernel = ConstantKernel(
-            1.0) * RationalQuadratic(length_scale=1.0, alpha=1.0)
+            1.0) * RationalQuadratic(length_scale=1.0, alpha=1.0, length_scale_bounds=(1e-5, 1e6))
     elif kernel_type == 'ExpSineSquared':
         kernel = ConstantKernel(
-            1.0) * ExpSineSquared(length_scale=1.0, periodicity=1.0)
+            1.0) * ExpSineSquared(length_scale=1.0, periodicity=1.0, length_scale_bounds=(1e-5, 1e6))
     elif kernel_type == 'Combined':
-        kernel = ConstantKernel(1.0) * RBF(length_scale=1.0) + \
+        kernel = ConstantKernel(1.0) * RBF(length_scale=1.0, length_scale_bounds=(1e-5, 1e6)) + \
             ConstantKernel(1.0) * WhiteKernel(noise_level=1)
     else:
         raise ValueError(f"Unsupported kernel type: {kernel_type}")
 
     gp = GaussianProcessRegressor(
-        kernel=kernel, n_restarts_optimizer=10, random_state=812)
+        kernel=kernel, n_restarts_optimizer=10, random_state=812, alpha=1e-6)
     gp.fit(x_high_fidelity, f_high_fidelity)
     return gp
 

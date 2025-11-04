@@ -29,6 +29,7 @@ try:
         run_jtrrouter_to_create_rou_xml,
         # result_analysis_on_EdgeData,
     )
+    from realtwin.func_lib._f_calibration.algo_sumo._bayesian_opt import BayesianOptimization as BO
 except ImportError:
     from util_cali_behavior import (
         get_travel_time_from_EdgeData_xml,
@@ -36,6 +37,7 @@ except ImportError:
         run_jtrrouter_to_create_rou_xml,
         # result_analysis_on_EdgeData,
     )
+    from _bayesian_opt import BayesianOptimization as BO
 import numpy as np
 
 if 'SUMO_HOME' in os.environ:
@@ -93,7 +95,7 @@ def fitness_func(solution: list | np.ndarray, scenario_config: dict = None, erro
     travel_time_diff_list = []
     for route in sel_behavior_routes:
         route_time = sel_behavior_routes[route]["time"]
-        route_edge_list = sel_behavior_routes[route]["route_list"]
+        route_edge_list = sel_behavior_routes[route]["edge_list"]
         travel_time = get_travel_time_from_EdgeData_xml(path_EdgeData, route_edge_list)
         travel_time_diff = abs(route_time - travel_time)
         travel_time_diff_list.append(travel_time_diff)
@@ -191,10 +193,9 @@ class BehaviorCali:
                           "emergencyDecel": [5.0, 9.3]
                           }
 
-        params_ranges = self.behavior_cfg.get("params_ranges",
-                                              params_ranges_).values()
-        params_lb = [val[0] for val in params_ranges]
-        params_ub = [val[1] for val in params_ranges]
+        self.params_ranges = self.behavior_cfg.get("params_ranges", params_ranges_).values()
+        params_lb = [val[0] for val in self.params_ranges]
+        params_ub = [val[1] for val in self.params_ranges]
         self.problem_dict = {
             "obj_func": partial(fitness_func, scenario_config=self.scenario_config, error_func="rmse"),
             "bounds": FloatVar(lb=params_lb, ub=params_ub,),
@@ -235,6 +236,15 @@ class BehaviorCali:
             output_dir (str): the directory to save the results.
             model: the optimized model object.
         """
+        # check if output_dir exists
+        os.makedirs(output_dir, exist_ok=True)
+
+        # save Bayesian Optimization best solution
+        try:
+            model.run_vis(output_dir=output_dir)
+            return True
+        except Exception:
+            pass
 
         # save the best solution
         try:
@@ -478,6 +488,15 @@ class BehaviorCali:
 
         return (g_best, model_ts)
 
+    def run_BO(self, **kwargs) -> tuple:
+        """Run Bayesian Optimization (BO) for behavior optimization."""
+        self.scenario_config["behavior_parameters_ranges"] = self.params_ranges
+
+        bo = BO(scenario_config=self.scenario_config, algo_config=self.behavior_cfg, verbose=True)
+
+        bo.solve(obj_func=fitness_func)
+
+        return (bo.best_run_fitness, bo)
 
 if __name__ == "__main__":
 
@@ -494,7 +513,7 @@ if __name__ == "__main__":
         "calibration_target": {'GEH': 5, 'GEHPercent': 0.85},
         "calibration_interval": 60,
         "demand_interval": 15,
-        "EB_tt": 240,
+        "EB_tt": 240,  # in seconds
         "WB_tt": 180,
         "EB_edge_list": ["-312", "-293", "-297", "-288", "-286",
                          "-302", "-3221", "-322", "-313", "-284",

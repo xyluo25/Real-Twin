@@ -487,7 +487,7 @@ class TurnInflowCali:
     def run_BO(self, **kwargs) -> tuple:
         """Run Bayesian Optimization (BO) for behavior optimization."""
 
-        bo = BO(scenario_config=self.scenario_config, algo_config_turn_inflow=self.turn_inflow_cfg, verbose=True)
+        bo = BO(scenario_config=self.scenario_config, algo_config=self.turn_inflow_cfg, verbose=True)
 
         bo.solve(obj_func=fitness_func_turn_flow)
 

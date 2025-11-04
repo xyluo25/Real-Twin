@@ -23,26 +23,25 @@ from ._bayesian_opt_util import online_optimization
 class BayesianOptimization:
     """ Bayesian Optimization for calibrating turn inflow parameters. """
 
-    def __init__(self, scenario_config: dict = None, algo_config_turn_inflow: dict = None, verbose: bool = False):
+    def __init__(self, scenario_config: dict = None, algo_config: dict = None, verbose: bool = False):
         """ Initialize the Bayesian Optimization class.
 
         Args:
             scenario_config (dict): Configuration for the scenario.
-            algo_config_turn_inflow (dict): Algorithm configuration for turn inflow calibration.
+            algo_config (dict): Algorithm configuration for turn inflow calibration.
             verbose (bool): Whether to print verbose output.
         """
 
         self.scenario_config = scenario_config
-        self.algo_config_turn_inflow = algo_config_turn_inflow
+        self.algo_config = algo_config
         self.verbose = verbose
 
+        # for turn and inflow calibration, get n_variable, n_inflow_variable, n_turn_variable
         self.n_variable = self.scenario_config.get("N_Variable")
         self.n_inflow_variable = self.scenario_config.get("N_InflowVariable")
         self.n_turn_variable = self.scenario_config.get("N_TurnVariable")
         # max inflow for the inflow variables
         self.max_inflow = self.scenario_config.get("max_inflow", 200)
-
-        # self.obj_func = partial(fitness_func_turn_flow, scenario_config=self.scenario_config)
 
         # For turn inflow calibration,
         # lower bounds are 0 for all variables,
@@ -51,6 +50,14 @@ class BayesianOptimization:
         self.bounds = ([0] * self.n_variable,
                        [1] * self.n_turn_variable + [self.max_inflow] * self.n_inflow_variable)
 
+        # for behavior calibration, check whether behavior_parameters_ranges exists
+        if "behavior_parameters_ranges" in self.scenario_config:
+            params_ranges = self.scenario_config["behavior_parameters_ranges"]
+            params_lb = [val[0] for val in params_ranges]
+            params_ub = [val[1] for val in params_ranges]
+            self.bounds = (params_lb, params_ub)
+            self.n_variable = len(params_ranges)
+
     def solve(self, obj_func: callable = None):
         """ Perform Bayesian Optimization over multiple runs.
 
@@ -58,18 +65,22 @@ class BayesianOptimization:
             obj_func (callable): Objective function to minimize.
                 # obj_func = partial(fitness_func_turn_flow, scenario_config=self.scenario_config)
         """
-        # get total_run from algo_config_turn_inflow
-        total_run = self.algo_config_turn_inflow.get("bo_config", {}).get("total_run", 10)
+        # get total_run from algo_config
+        total_run = self.algo_config.get("bo_config", {}).get("total_run", 10)
         if not isinstance(total_run, int):
             raise TypeError("Total runs must be an integer.")
         if total_run <= 0 or total_run > 1000:
             raise ValueError("Total runs must be a positive integer less than or equal to 1000.")
 
-        self.kernel_type = self.algo_config_turn_inflow.get("bo_config", {}).get("kernel_type", "RBF")
-        self.tolerance = self.algo_config_turn_inflow.get("bo_config", {}).get("tolerance", 3)
-        self.target = self.algo_config_turn_inflow.get("bo_config", {}).get("target", 0)
-        self.random_points = self.algo_config_turn_inflow.get("bo_config", {}).get("random_points", 4000)
-        self.max_evaluations = self.algo_config_turn_inflow.get("bo_config", {}).get("max_evaluations", 100)
+        self.kernel_type = self.algo_config.get("bo_config", {}).get("kernel_type", "RBF")
+        self.tolerance = self.algo_config.get("bo_config", {}).get("tolerance", 3)
+        self.target = self.algo_config.get("bo_config", {}).get("target", 0)
+        self.random_points = self.algo_config.get("bo_config", {}).get("random_points", 4000)
+        self.max_evaluations = self.algo_config.get("bo_config", {}).get("max_evaluations", 100)
+
+        # ensure max_evaluations is greater than n_variable
+        if self.max_evaluations <= self.n_variable:
+            self.max_evaluations = self.n_variable + 1
 
         # Initialize min/max trackers
         all_results = []
@@ -158,12 +169,7 @@ class BayesianOptimization:
 
         # Save all results to a DataFrame and CSV
         self.results_df = pd.DataFrame(all_results)
-        # results_df.to_csv("sumo_bayesopt_10runs_results.csv", index=False)
-        print("\nSaved all fitness and iteration results to sumo_bayesopt_10runs_results.csv")
-
         self.points_df = pd.DataFrame(all_points)
-        # points_df.to_csv("sumo_bayesopt_10runs_points.csv", index=False)
-        print("Saved all parameter values for each iteration to sumo_bayesopt_10runs_points.csv")
 
         # Create a DataFrame for best results per run (lowest fitness), including run time
         best_rows = []
@@ -176,22 +182,6 @@ class BayesianOptimization:
                 best_row['run_time_sec'] = run_times[run - 1]
                 best_rows.append(best_row)
         self.best_df = pd.DataFrame(best_rows)
-        # best_df.to_csv("sumo_bayesopt_best_per_run.csv", index=False)
-        print("Saved best fitness/iteration/parameters for each run to sumo_bayesopt_best_per_run.csv")
-
-        # Plot fitness vs iteration for each run with fixed y-limits
-        for run in range(total_run):
-            evaluated_values = self.temp_evaluated_values[run]
-            plt.figure(figsize=(8, 5))
-            plt.plot(range(1, len(evaluated_values) + 1), evaluated_values, marker='o')
-            plt.xlabel('Iteration')
-            plt.ylabel('Fitness')
-            plt.title(f'Fitness Convergence for Run {run + 1}')
-            plt.ylim(self.fitness_global_min, self.fitness_global_max)
-            plt.grid(True)
-            plt.tight_layout()
-            # plt.savefig(f'fitness_vs_iteration_run{run + 1}.png')
-            plt.close()
 
         # Find the best run (lowest fitness)
         best_run_row = self.best_df.sort_values('fitness').iloc[0]
@@ -201,18 +191,6 @@ class BayesianOptimization:
 
         # Filter points for the best run
         self.best_run_fitness = self.results_df[self.results_df['run'] == best_run].sort_values('iteration')['fitness'].values
-
-        # Plot fitness convergence for the best run and save (with fixed y-limits)
-        plt.figure(figsize=(8, 5))
-        plt.plot(range(1, len(self.best_run_fitness) + 1), self.best_run_fitness, marker='o')
-        plt.xlabel('Iteration')
-        plt.ylabel('Fitness')
-        plt.title('Fitness Convergence for Best Run')
-        plt.ylim(self.fitness_global_min, self.fitness_global_max)
-        plt.grid(True)
-        plt.tight_layout()
-        # plt.savefig('best_run_fitness_convergence.png')
-        plt.close()
 
         # Test passed/failed message for best run
         success = (best_fitness - self.target) <= self.tolerance
@@ -227,21 +205,30 @@ class BayesianOptimization:
     def run_vis(self, output_dir: str = "./"):
         """ Visualize the results of the Bayesian Optimization. """
 
+        # Plot fitness vs iteration for each run with fixed y-limits
+        total_run = self.algo_config.get("bo_config", {}).get("total_run", 10)
+
         # save data to local
 
-        self.results_df.to_csv(os.path.join(output_dir, "sumo_bayesopt_10runs_results.csv"), index=False)
-        print("\nSaved all fitness and iteration results to sumo_bayesopt_10runs_results.csv")
+        self.results_df.to_csv(os.path.join(output_dir, f"sumo_bayesopt_{total_run}runs_results.csv"), index=False)
+        print(f"\nSaved all fitness and iteration results to sumo_bayesopt_{total_run}runs_results.csv")
 
-        self.points_df.to_csv(os.path.join(output_dir, "sumo_bayesopt_10runs_points.csv"), index=False)
-        print("Saved all parameter values for each iteration to sumo_bayesopt_10runs_points.csv")
+        self.points_df.to_csv(os.path.join(output_dir, f"sumo_bayesopt_{total_run}runs_points.csv"), index=False)
+        print(f"Saved all parameter values for each iteration to sumo_bayesopt_{total_run}runs_points.csv")
+        self.best_df.to_csv(os.path.join(output_dir, f"sumo_bayesopt_{total_run}runs_best_per_run.csv"), index=False)
+        print(f"Saved best fitness/iteration/parameters for each run to sumo_bayesopt_{total_run}runs_best_per_run.csv")
 
-        self.best_df.to_csv(os.path.join(output_dir, "sumo_bayesopt_best_per_run.csv"), index=False)
-        print("Saved best fitness/iteration/parameters for each run to sumo_bayesopt_best_per_run.csv")
-
-        # Plot fitness vs iteration for each run with fixed y-limits
-        total_run = self.algo_config_turn_inflow.get("bo_config", {}).get("total_run", 10)
         for run in range(total_run):
             evaluated_values = self.temp_evaluated_values[run]
+            yv = evaluated_values[np.isfinite(evaluated_values)]
+            ymin, ymax = np.min(yv), np.max(yv)
+            if ymin == ymax:
+                pad = 1e-9 if ymin != 0 else 1.0
+                ymin, ymax = ymin - pad, ymax + pad
+
+            self.fitness_global_min = min(self.fitness_global_min, ymin)
+            self.fitness_global_max = max(self.fitness_global_max, ymax)
+
             plt.figure(figsize=(8, 5))
             plt.plot(range(1, len(evaluated_values) + 1), evaluated_values, marker='o')
             plt.xlabel('Iteration')
