@@ -134,15 +134,22 @@ class BayesianOptimization:
         self.bounds = ([0] * self.n_variable,
                        [1] * self.n_turn_variable + [self.max_inflow] * self.n_inflow_variable)
 
-    def optimize(self):
+    def optimize(self, obj_func: callable = None):
         """ Perform Bayesian Optimization over multiple runs.
 
         Args:
             total_run (int): Number of optimization runs to perform.
             scenario_config (dict): Configuration for the scenario.
         """
-        # get total_run from scenario_config
-        total_run = self.scenario_config.get("bo_config", {}).get("total_run", 10)
+
+        if isinstance(obj_func, callable):
+            self.obj_func = obj_func
+        else:
+            raise TypeError("Objective function must be callable.")
+
+
+        # get total_run from algo_config_turn_inflow
+        total_run = self.algo_config_turn_inflow.get("bo_config", {}).get("total_run", 10)
         if not isinstance(total_run, int):
             raise TypeError("Total runs must be an integer.")
         if total_run <= 0 or total_run > 1000:

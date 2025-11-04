@@ -29,6 +29,8 @@ try:
         generate_turn_demand_cali,
         generate_inflow,
         generate_turn_summary,)
+
+    from realtwin.func_lib._f_calibration.algo_sumo._bayesian_opt import BayesianOptimization as BO
 except ImportError:
     from util_cali_turn_inflow import (
         update_turn_flow_from_solution,
@@ -39,6 +41,7 @@ except ImportError:
         generate_turn_demand_cali,
         generate_inflow,
         generate_turn_summary,)
+    from _bayesian_opt import BayesianOptimization as BO
 
 
 import numpy as np
@@ -233,7 +236,14 @@ class TurnInflowCali:
         # check if output_dir exists
         os.makedirs(output_dir, exist_ok=True)
 
-        # save the best solution
+        # save Bayesian Optimization best solution
+        try:
+            model.run_vis(output_dir=output_dir)
+            return True
+        except Exception:
+            pass
+
+        # save Mealpy object the best solution
         try:
             model.history.save_global_objectives_chart(filename=f"{output_dir}/global_objectives")
             # model.history.save_local_objectives_chart(filename=f"{output_dir}/local_objectives")
@@ -243,10 +253,11 @@ class TurnInflowCali:
             # model.history.save_exploration_exploitation_chart(filename=f"{output_dir}/exploration_exploitation")
             # model.history.save_diversity_chart(filename=f"{output_dir}/diversity")
             # model.history.save_trajectory_chart(filename=f"{output_dir}/trajectory")
-        except Exception as e:
-            print(f"  :Error in saving vis: {e}")
-            return False
-        return True
+            return True
+        except Exception:
+            pass
+
+        return False
 
     def run_GA(self, **kwargs) -> tuple:
         """Run Genetic Algorithm (GA) for behavior optimization.
@@ -476,8 +487,11 @@ class TurnInflowCali:
     def run_BO(self, **kwargs) -> tuple:
         """Run Bayesian Optimization (BO) for behavior optimization."""
 
+        bo = BO(scenario_config=self.scenario_config, algo_config_turn_inflow=self.turn_inflow_cfg, verbose=True)
 
-        return (None, None)
+        bo.solve(obj_func=fitness_func_turn_flow)
+
+        return (bo.best_run_fitness, bo)
 
     def _clean_up(self):
         """Clean up the temporary files generated during the calibration process."""

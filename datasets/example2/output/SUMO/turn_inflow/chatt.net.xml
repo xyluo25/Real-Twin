@@ -86,12 +86,12 @@
         <param key="ring2" value="5,6,4,3"/>
         <param key="barrier2Phases" value="2,6"/>
         <param key="barrierPhases" value="3,3"/>
-        <phase duration="99" minDur="5" maxDur="6.3" vehext="2" yellow="3" red="2.7" name="1" state="srrrrsrrrrrsrrrsrrGG"/>
-        <phase duration="99" minDur="10" maxDur="21.9" vehext="3" yellow="4.3" red="1.8" name="2" state="srrrrGGGGggsrrrsrrrr"/>
-        <phase duration="99" minDur="6" maxDur="30.4" vehext="3" yellow="3.8" red="1.8" name="3" state="srrrrsrrrrrGGGGsrrrr"/>
-        <phase duration="99" minDur="6" maxDur="18.3" vehext="2" yellow="3.6" red="2.1" name="4" state="gGGGGsrrrrrsrrrsrrrr"/>
-        <phase duration="99" minDur="5" maxDur="7.7" vehext="2" yellow="3.4" red="2.9" name="5" state="srrrrsrrrGGsrrrsrrrr"/>
-        <phase duration="99" minDur="10" maxDur="20.3" vehext="3" yellow="3.6" red="2.1" name="6" state="srrrrsrrrrrsrrrgGGgg"/>
+        <phase duration="99" minDur="5" maxDur="6.3" vehext="2" yellow="3" red="2.7" name="1" state="srrrsrrGGsrrrrsrrrrr"/>
+        <phase duration="99" minDur="10" maxDur="21.9" vehext="3" yellow="4.3" red="1.8" name="2" state="srrrsrrrrsrrrrGGGGgg"/>
+        <phase duration="99" minDur="6" maxDur="30.4" vehext="3" yellow="3.8" red="1.8" name="3" state="GGGGsrrrrsrrrrsrrrrr"/>
+        <phase duration="99" minDur="6" maxDur="18.3" vehext="2" yellow="3.6" red="2.1" name="4" state="srrrsrrrrgGGGGsrrrrr"/>
+        <phase duration="99" minDur="5" maxDur="7.7" vehext="2" yellow="3.4" red="2.9" name="5" state="srrrsrrrrsrrrrsrrrGG"/>
+        <phase duration="99" minDur="10" maxDur="20.3" vehext="3" yellow="3.6" red="2.1" name="6" state="srrrgGGggsrrrrsrrrrr"/>
     </tlLogic>
     <tlLogic id="1" type="static" programID="0" offset="0">
         <phase duration="82" state="G"/>
@@ -176,19 +176,19 @@
         <request index="1" response="00" foes="00"/>
     </junction>
     <connection from="-100" to="-107" fromLane="0" toLane="0" dir="l" state="M"/>
-    <connection from="-102" to="-94" fromLane="0" toLane="0" tl="2" linkIndex="15" dir="r" state="O">
+    <connection from="-102" to="-94" fromLane="0" toLane="0" tl="2" linkIndex="4" dir="r" state="O">
         <param key="signalID" value="202698315_15 202698315_16"/>
     </connection>
-    <connection from="-102" to="-93" fromLane="0" toLane="0" tl="2" linkIndex="16" dir="s" state="O">
+    <connection from="-102" to="-93" fromLane="0" toLane="0" tl="2" linkIndex="5" dir="s" state="O">
         <param key="signalID" value="202698315_15 202698315_16"/>
     </connection>
-    <connection from="-102" to="-93" fromLane="1" toLane="1" tl="2" linkIndex="17" dir="s" state="O">
+    <connection from="-102" to="-93" fromLane="1" toLane="1" tl="2" linkIndex="6" dir="s" state="O">
         <param key="signalID" value="202698315_17"/>
     </connection>
-    <connection from="-102" to="-95" fromLane="2" toLane="0" tl="2" linkIndex="18" dir="l" state="o">
+    <connection from="-102" to="-95" fromLane="2" toLane="0" tl="2" linkIndex="7" dir="l" state="o">
         <param key="signalID" value="202698315_18 202698315_19"/>
     </connection>
-    <connection from="-102" to="-96" fromLane="2" toLane="2" tl="2" linkIndex="19" dir="t" state="o">
+    <connection from="-102" to="-96" fromLane="2" toLane="2" tl="2" linkIndex="8" dir="t" state="o">
         <param key="signalID" value="202698315_18 202698315_19"/>
     </connection>
     <connection from="-103" to="-105" fromLane="0" toLane="0" dir="r" state="M"/>
@@ -201,22 +201,22 @@
     <connection from="-106" to="-98" fromLane="0" toLane="1" dir="l" state="m"/>
     <connection from="-106" to="-100" fromLane="0" toLane="0" dir="t" state="m"/>
     <connection from="-107" to="-104" fromLane="0" toLane="0" dir="l" state="M"/>
-    <connection from="-90" to="-95" fromLane="0" toLane="0" tl="2" linkIndex="5" dir="r" state="O">
+    <connection from="-90" to="-95" fromLane="0" toLane="0" tl="2" linkIndex="14" dir="r" state="O">
         <param key="signalID" value="202698315_5 202698315_6"/>
     </connection>
-    <connection from="-90" to="-96" fromLane="0" toLane="0" tl="2" linkIndex="6" dir="s" state="O">
+    <connection from="-90" to="-96" fromLane="0" toLane="0" tl="2" linkIndex="15" dir="s" state="O">
         <param key="signalID" value="202698315_5 202698315_6"/>
     </connection>
-    <connection from="-90" to="-96" fromLane="1" toLane="1" tl="2" linkIndex="7" dir="s" state="O">
+    <connection from="-90" to="-96" fromLane="1" toLane="1" tl="2" linkIndex="16" dir="s" state="O">
         <param key="signalID" value="202698315_10 202698315_7 202698315_8 202698315_9"/>
     </connection>
-    <connection from="-90" to="-96" fromLane="1" toLane="2" tl="2" linkIndex="8" dir="s" state="O">
+    <connection from="-90" to="-96" fromLane="1" toLane="2" tl="2" linkIndex="17" dir="s" state="O">
         <param key="signalID" value="202698315_10 202698315_7 202698315_8 202698315_9"/>
     </connection>
-    <connection from="-90" to="-94" fromLane="1" toLane="1" tl="2" linkIndex="9" dir="l" state="o">
+    <connection from="-90" to="-94" fromLane="1" toLane="1" tl="2" linkIndex="18" dir="l" state="o">
         <param key="signalID" value="202698315_10 202698315_7 202698315_8 202698315_9"/>
     </connection>
-    <connection from="-90" to="-93" fromLane="1" toLane="1" tl="2" linkIndex="10" dir="t" state="o">
+    <connection from="-90" to="-93" fromLane="1" toLane="1" tl="2" linkIndex="19" dir="t" state="o">
         <param key="signalID" value="202698315_10 202698315_7 202698315_8 202698315_9"/>
     </connection>
     <connection from="-91" to="-102" fromLane="0" toLane="0" dir="s" state="M"/>
@@ -236,31 +236,31 @@
     <connection from="-96" to="-101" fromLane="2" toLane="1" dir="s" state="M"/>
     <connection from="-96" to="-101" fromLane="2" toLane="2" dir="s" state="M"/>
     <connection from="-96" to="-102" fromLane="2" toLane="2" dir="t" state="m"/>
-    <connection from="-97" to="-93" fromLane="0" toLane="0" tl="2" linkIndex="11" dir="r" state="o">
+    <connection from="-97" to="-93" fromLane="0" toLane="0" tl="2" linkIndex="0" dir="r" state="o">
         <param key="signalID" value="202698315_11 202698315_12"/>
     </connection>
-    <connection from="-97" to="-95" fromLane="0" toLane="0" tl="2" linkIndex="12" dir="s" state="o">
+    <connection from="-97" to="-95" fromLane="0" toLane="0" tl="2" linkIndex="1" dir="s" state="o">
         <param key="signalID" value="202698315_11 202698315_12"/>
     </connection>
-    <connection from="-97" to="-96" fromLane="1" toLane="2" tl="2" linkIndex="13" dir="l" state="o">
+    <connection from="-97" to="-96" fromLane="1" toLane="2" tl="2" linkIndex="2" dir="l" state="o">
         <param key="signalID" value="202698315_13 202698315_14"/>
     </connection>
-    <connection from="-97" to="-94" fromLane="1" toLane="1" tl="2" linkIndex="14" dir="t" state="o">
+    <connection from="-97" to="-94" fromLane="1" toLane="1" tl="2" linkIndex="3" dir="t" state="o">
         <param key="signalID" value="202698315_13 202698315_14"/>
     </connection>
-    <connection from="-99" to="-96" fromLane="0" toLane="0" tl="2" linkIndex="0" dir="r" state="o">
+    <connection from="-99" to="-96" fromLane="0" toLane="0" tl="2" linkIndex="9" dir="r" state="o">
         <param key="signalID" value="202698315_0 202698315_1 202698315_2 202698315_3 202698315_4"/>
     </connection>
-    <connection from="-99" to="-94" fromLane="0" toLane="0" tl="2" linkIndex="1" dir="s" state="o">
+    <connection from="-99" to="-94" fromLane="0" toLane="0" tl="2" linkIndex="10" dir="s" state="o">
         <param key="signalID" value="202698315_0 202698315_1 202698315_2 202698315_3 202698315_4"/>
     </connection>
-    <connection from="-99" to="-94" fromLane="0" toLane="1" tl="2" linkIndex="2" dir="s" state="o">
+    <connection from="-99" to="-94" fromLane="0" toLane="1" tl="2" linkIndex="11" dir="s" state="o">
         <param key="signalID" value="202698315_0 202698315_1 202698315_2 202698315_3 202698315_4"/>
     </connection>
-    <connection from="-99" to="-93" fromLane="0" toLane="1" tl="2" linkIndex="3" dir="l" state="o">
+    <connection from="-99" to="-93" fromLane="0" toLane="1" tl="2" linkIndex="12" dir="l" state="o">
         <param key="signalID" value="202698315_0 202698315_1 202698315_2 202698315_3 202698315_4"/>
     </connection>
-    <connection from="-99" to="-95" fromLane="0" toLane="0" tl="2" linkIndex="4" dir="t" state="o">
+    <connection from="-99" to="-95" fromLane="0" toLane="0" tl="2" linkIndex="13" dir="t" state="o">
         <param key="signalID" value="202698315_0 202698315_1 202698315_2 202698315_3 202698315_4"/>
     </connection>
 </net>

@@ -58,6 +58,6 @@ Calibration:
         kernel_type: "RBF"  #  Matern, RationalQuadratic, ExpSineSquared, Combined
         tolerance: 3  # tolerance for convergence [1, 100]
         target: 0
-        random_points: 4000
+        random_points: 10000
         max_evaluations: 100
-        total_run: 10  # total run times for BO [1, 1000]
+        total_run: 2  # total run times for BO [1, 1000]

@@ -278,7 +278,7 @@ def online_optimization(num_params: int, variable_bounds: tuple,
 
     # num_initial_points = int(np.ceil(2+num_params**(4/3)))
     num_initial_points = int(np.ceil(2 + num_params * (4 / 3)))
-    print(f"Number of initial points: {num_initial_points}")
+    # print(f"Number of initial points: {num_initial_points}")
     if num_initial_points + 1 > max_evaluations:
         raise ValueError("Not enough evaluations for initial points.")
 

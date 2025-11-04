@@ -296,6 +296,7 @@ class RealTwin:
                              "fill in the Matchup Table before proceeding.\n"
                              "[bold red]Please run generate_abstract_scenario() "
                              "after preparing the input data.\n")
+                print("  :INFO: Program stopped. Press Enter to continue after updating the Matchup table.")
                 time.sleep(2)  # wait for 2 seconds before exiting
                 # sys.exit(0)
                 # Stop the program to let user update the Matchup table

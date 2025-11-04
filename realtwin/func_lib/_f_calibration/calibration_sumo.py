@@ -61,6 +61,7 @@ def cali_sumo(*, sel_algo: dict = None, input_config: dict = None, verbose: bool
     algo_config_turn_inflow["ga_config"] = input_config["Calibration"]["ga_config"]
     algo_config_turn_inflow["sa_config"] = input_config["Calibration"]["sa_config"]
     algo_config_turn_inflow["ts_config"] = input_config["Calibration"]["ts_config"]
+    algo_config_turn_inflow["bo_config"] = input_config["Calibration"].get("bo_config", {})
 
     if "update_turn_flow_algo" in kwargs:
         algo_config_turn_inflow["ga_config"] = algo_config_turn_inflow["ga_config"].update(
@@ -69,11 +70,14 @@ def cali_sumo(*, sel_algo: dict = None, input_config: dict = None, verbose: bool
             kwargs["update_turn_flow_algo"].get("sa_config", {}))
         algo_config_turn_inflow["ts_config"] = algo_config_turn_inflow["ts_config"].update(
             kwargs["update_turn_flow_algo"].get("ts_config", {}))
+        algo_config_turn_inflow["bo_config"] = algo_config_turn_inflow["bo_config"].update(
+            kwargs["update_turn_flow_algo"].get("bo_config", {}))
 
     algo_config_behavior = input_config["Calibration"]["behavior"]
     algo_config_behavior["ga_config"] = input_config["Calibration"]["ga_config"]
     algo_config_behavior["sa_config"] = input_config["Calibration"]["sa_config"]
     algo_config_behavior["ts_config"] = input_config["Calibration"]["ts_config"]
+    algo_config_behavior["bo_config"] = input_config["Calibration"].get("bo_config", {})
 
     if "update_behavior_algo" in kwargs:
         algo_config_behavior["ga_config"] = algo_config_behavior["ga_config"].update(
@@ -82,8 +86,9 @@ def cali_sumo(*, sel_algo: dict = None, input_config: dict = None, verbose: bool
             kwargs["update_behavior_algo"].get("sa_config", {}))
         algo_config_behavior["ts_config"] = algo_config_behavior["ts_config"].update(
             kwargs["update_behavior_algo"].get("ts_config", {}))
+        algo_config_behavior["bo_config"] = algo_config_behavior["bo_config"].update(
+            kwargs["update_behavior_algo"].get("bo_config", {}))
 
-    # run calibration based on the selected algorithm: optimize turn and inflow
     print("\n  :Optimize Turn and Inflow...")
     turn_inflow = TurnInflowCali(scenario_config_turn_inflow, algo_config_turn_inflow, verbose=verbose)
 
@@ -97,6 +102,9 @@ def cali_sumo(*, sel_algo: dict = None, input_config: dict = None, verbose: bool
         case "ts":
             g_best, model = turn_inflow.run_TS()
             path_model_result = "turn_inflow_ts_result"
+        case "bo":
+            g_best, model = turn_inflow.run_BO()
+            path_model_result = "turn_inflow_bo_result"
         case _:
             print(f"  :Error: unsupported algorithm {sel_algo['turn_inflow']}, using genetic algorithm as default.")
             g_best, model = turn_inflow.run_GA()
@@ -144,6 +152,9 @@ def cali_sumo(*, sel_algo: dict = None, input_config: dict = None, verbose: bool
         case "ts":
             g_best, model = behavior.run_TS()
             path_model_result = "behavior_ts_result"
+        case "bo":
+            g_best, model = behavior.run_BO()
+            path_model_result = "behavior_bo_result"
         case _:
             print(f"  :Error: unsupported algorithm {sel_algo['behavior']}, using genetic algorithm as default.")
             g_best, model = behavior.run_GA()
