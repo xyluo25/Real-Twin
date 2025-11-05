@@ -13,7 +13,10 @@
 from ._abstractScenario import (AbstractScenario,
                                 load_traffic_volume,
                                 load_traffic_turning_ratio,
-                                load_control_signal)
+                                load_control_signal,
+                                create_sumo_net_from_vertices,
+                                create_opendrive_xodr_from_sumo_net
+                                )
 
 from ._network import Network, OpenDriveNetwork, OSMRoad
 from ._traffic import Traffic
@@ -29,6 +32,8 @@ __all__ = [
     'load_traffic_volume',
     'load_traffic_turning_ratio',
     'load_control_signal',
+    'create_sumo_net_from_vertices',
+    'create_opendrive_xodr_from_sumo_net',
 
     'Network',
     'OpenDriveNetwork',

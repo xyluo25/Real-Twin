@@ -31,6 +31,7 @@ from realtwin.util_lib.mapping_SUMO_OpenDrive_ID import parse_SUMO_ID, parse_SUM
 # from realtwin.util_lib.download_elevation_tif import download_elevation_tif_by_bbox
 from realtwin.util_lib.check_abstract_scenario_inputs import check_abstract_inputs
 from realtwin.func_lib._c_abstract_scenario._abstractScenario import AbstractScenario
+from realtwin.func_lib._c_abstract_scenario import create_sumo_net_from_vertices, create_opendrive_xodr_from_sumo_net
 from realtwin.func_lib._c_abstract_scenario.rt_matchup_table_generation import generate_matchup_table
 from realtwin.func_lib._c_abstract_scenario.rt_matchup_table_generation import format_junction_bearing
 from realtwin.func_lib._c_abstract_scenario.rt_demand_generation import generate_turn_demand, update_matchup_table
@@ -183,7 +184,7 @@ class RealTwin:
 
                 If provided, the OpenDrive network will be generated based on this SUMO network.
 
-                If not provided, the OpenDrive network will be generated based on the vertices from the config file.
+                If not provided, the OpenDrive network generated using vertices from the config file (OSM).
 
         See Also:
             - How to create configuration file:
@@ -206,24 +207,20 @@ class RealTwin:
 
             path_input = pf.path2linux(Path(self.input_config.get("input_dir")))
 
-            # check if Control folder exists in the input directory
+            # Check 1: if Control folder exists in the input directory
             path_control = pf.path2linux(Path(path_input) / "Control")
             if not os.path.exists(path_control):
                 os.makedirs(path_control)
-
-            # check if the Control folder is empty
             elif not os.listdir(path_control):
                 console.print(f"[dim cyan]Control folder is empty: {path_control}.")
 
             console.print(f"  [dim cyan]:Control folder exists: {path_control}.[/dim cyan]\n"
                           "  :NOTICE: [bold red]Please include Synchro UTDF file (signal) inside Control folder\n")
 
-            # check if Traffic folder exists in the input directory
+            # Check 2: if Traffic folder exists in the input directory
             path_traffic = pf.path2linux(Path(path_input) / "Traffic")
             if not os.path.exists(path_traffic):
                 os.makedirs(path_traffic)
-
-            # check if the Traffic folder is empty
             elif not os.listdir(path_traffic):
                 console.print(f"  [magenta]:Traffic folder is empty: {path_traffic}.")
 
@@ -234,47 +231,36 @@ class RealTwin:
                           " For how to fill the MatchupTable.xlsx, please refer to official documentation\n",
                           soft_wrap=True, no_wrap=False)
 
-            # check if SUMO net file generated (in OpenDrive folder), if not, create the net.
+            # Check 3: if demo mode is enabled, use the updated SUMO network from demo data
+            if self.input_config["demo_data"]:
+                incl_sumo_net = pf.path2linux(Path(self.input_config["input_dir"]) / "updated.net.xml")
+
+            # Check 4: copy user provided net to OpenDrive folder and generate OpenDrive xodr file
             net_name = self.input_config["Network"]["NetworkName"]
-            path_sumo_net = pf.path2linux(Path(self.input_config.get("output_dir")) / f"OpenDrive/{net_name}.net.xml")
-
-            # generate abstract scenario if sumo net file does not exist
-            self.abstract_scenario = AbstractScenario(self.input_config)
-
-            # Update SUMO Network before generating OpenDrive network
-            if demo_data := self.input_config["demo_data"]:
-
-                # demo mode is enabled, use the updated SUMO network from demo data
-                incl_sumo_net = pf.path2linux(Path(self.input_config["input_dir"]) / f"updated_net/{demo_data}.net.xml")
-
+            path_opendrive_net = pf.path2linux(Path(self.input_config.get("output_dir")) / f"OpenDrive/{net_name}.net.xml")
             if incl_sumo_net:
                 # check if the file exists and end with .net.xml
                 if incl_sumo_net.endswith(".net.xml") and os.path.exists(incl_sumo_net):
                     self.input_config["incl_sumo_net"] = incl_sumo_net
 
-                    # Copy user updated net file to the OpenDrive folder
+                    # Create Output folder and OpenDrive folder if not exists
+                    os.makedirs(Path(self.input_config.get("output_dir")), exist_ok=True)
+                    os.makedirs(Path(self.input_config.get("output_dir")) / 'OpenDrive', exist_ok=True)
+
+                    # Copy user updated net to the OpenDrive folder
                     incl_sumo_net = pf.path2linux(Path(incl_sumo_net))  # ensure it's absolute path
-                    if incl_sumo_net != path_sumo_net:
-                        shutil.copy(incl_sumo_net, path_sumo_net)
+                    if incl_sumo_net != path_opendrive_net:
+                        shutil.copy(incl_sumo_net, path_opendrive_net)
 
-                    # update opendrive network
-                    self.abstract_scenario.Network.OpenDriveNetwork.OpenDrive_network = [
-                        path_sumo_net, ""]
+                    # mapping SUMO to OpenDrive IDs and generate OpenDrive xodr file
+                    parse_SUMO_ID(path_opendrive_net)
+                    parse_SUMO_to_OpenDrive(path_opendrive_net)
 
-                    # mapping SUMO to OpenDrive IDs
-                    parse_SUMO_ID(path_sumo_net)
-                    parse_SUMO_to_OpenDrive(path_sumo_net)
-
-                    console.print(f"  [dim cyan]:INFO: SUMO network is copied to {path_sumo_net}.\n"
-                                  f"  [dim cyan]:Using updated SUMO network provide by user: {incl_sumo_net} "
-                                  "to generate OpenDrive network.\n", soft_wrap=True, no_wrap=False)
-
-                    # create opendrive net from updated sumo net, and rewrite sumo net based on OpenDrive net
-                    # self.abstract_scenario.create_OpenDrive_network()
-                    # rprint("  [dim cyan]:INFO: OpenDrive network is generated.", end="")
+                    console.print(f"  [dim cyan]:INFO: SUMO network is copied to {path_opendrive_net}.\n"
+                                  f"  [dim cyan]:INFO: Using user updated network: {incl_sumo_net} "
+                                  "to generate OpenDrive xodr file.\n", soft_wrap=True, no_wrap=False)
                 else:
-                    console.print("  [magenta]:NOTE: incl_sumo_net is not exist or not with .net.xml extension.\n"
-                                  "  :Please provide a valid SUMO file with .net.xml extension or leave it empty.",
+                    console.print("  [magenta]:NOTE: incl_sumo_net is not exist or not with .net.xml extension.\n",
                                   soft_wrap=True, no_wrap=False)
             else:
                 #  let user know they can use their own SUMO network by using incl_sumo_net
@@ -282,31 +268,46 @@ class RealTwin:
                        "to the incl_sumo_net parameter. The path should be a .net.xml file. \n",
                        end="")
 
-            # generate SUMO and OpenDrive network if not exists
-            if not os.path.exists(path_sumo_net):
-                # Create original SUMO network from vertices from config file
-                self.abstract_scenario.create_SUMO_network()
+            # check 5: Generate OpenDrive net and xodr files if not exists
+            if not os.path.exists(path_opendrive_net):
+                network_name = self.input_config.get("Network", {}).get("NetworkName", "network")
+                network_vertices = self.input_config.get("Network", {}).get("NetworkVertices", [])
+                output_dir = pf.path2linux(Path(self.input_config.get("output_dir")))
 
-                # crate OpenDrive network from SUMO network, and then rewrite sumo network based on OpenDrive network
-                self.abstract_scenario.create_OpenDrive_network()
+                # Create original SUMO network from vertices and save to output/OpenDrive directory
+                create_sumo_net_from_vertices(net_name=network_name,
+                                              net_vertices=network_vertices,
+                                              output_dir=output_dir)
 
-                rprint("  :INFO: OpenDrive network is generated.\n", end="")
+                # based on the generated SUMO net, create OpenDrive xodr file using netconvert
+                create_opendrive_xodr_from_sumo_net(net_name=network_name,
+                                                    net_dir=output_dir)
 
-            # create matchup table for user
+                rprint("  :INFO: OpenDRIVE folder updated with generated .net and .xodr files.\n", end="")
+
+            # update the input config with the generated opendrive net path
+            self.input_config["path_opendrive_net"] = path_opendrive_net
+
+            # Check 6: Create matchup table from net file in OpenDrive folder
             path_matchup = pf.path2linux(Path(self.input_config.get("input_dir")) / "MatchupTable.xlsx")
 
             # check if sumo net file exists
-            if not os.path.exists(path_sumo_net):
-                raise Exception(f"  :Error: SUMO net file does not exist: {path_sumo_net},"
+            if not os.path.exists(path_opendrive_net):
+                raise Exception(f"  :Error: SUMO net file does not exist: {path_opendrive_net},"
                                 "please check input configuration file and re-run the script."
                                 "For details please refer to the documentation: ")
-            df_matchup_table = format_junction_bearing(path_sumo_net)
+
+            # load junction bearing info from the opendrive net file
+            df_matchup_table = format_junction_bearing(path_opendrive_net)
+
+            # create matchup table from updated junction bearing info
             generate_matchup_table(df_matchup_table, path_matchup)
+
             console.print(f"  [dim cyan]:NOTE: Matchup table is generated and saved to {path_matchup}.[/dim cyan]\n"
                           "  :NOTICE: [bold red]Please update the Matchup table from input folder"
-                          " and then run generate_abstract_scenario()."
-                          " For details please refer to official documentation: \n", soft_wrap=True, no_wrap=False)
+                          " and then run generate_abstract_scenario(). \n", soft_wrap=True, no_wrap=False)
 
+            # Check 7: whether or not to let user confirm the matchup table, in default True to let user confirm
             if self._input_confirm:
                 console.rule("[bold green]Program stopped. Please prepare the Control and Traffic data and "
                              "fill in the Matchup Table before proceeding.\n"
@@ -329,53 +330,43 @@ class RealTwin:
                 f"Please also fill in the Matchup Table at {path_matchup}.\n")
 
     def generate_abstract_scenario(self):
-        """Generate the abstract scenario: create OpenDrive files
-        """
+        """Generate the abstract scenario: create OpenDrive files"""
 
         # check abstract scenario inputs
         check_abstract_inputs(self.input_config.get("input_dir"))
 
         # 1. Generate the abstract scenario based on the input data
-        # self.abstract_scenario = AbstractScenario(self.input_config)
-        if not hasattr(self, 'abstract_scenario'):
-            raise Exception("  :Error: Abstract Scenario is not generated yet. "
-                            "Please run generate_inputs() first.")
+        self.abstract_scenario = AbstractScenario(self.input_config)
 
-        # update traffic and signal
-        path_matchup_updated = Path(self.input_config.get("input_dir")) / "MatchupTable_updated.xlsx"
+        # 2. update matchup table with traffic and signal data
         path_matchup = pf.path2linux(Path(self.input_config.get("input_dir")) / "MatchupTable.xlsx")
-        if path_matchup_updated.exists():
-            # update the matchup table with the updated one
-            shutil.copy(path_matchup_updated, path_matchup)
-        else:
-            path_matchup = pf.path2linux(Path(self.input_config.get("input_dir")) / "MatchupTable.xlsx")
-        print(f"  :INFO: Using Matchup Table: {path_matchup}")
         control_dir = pf.path2linux(Path(self.input_config.get("input_dir")) / "Control")
         traffic_dir = pf.path2linux(Path(self.input_config.get("input_dir")) / "Traffic")
-
-        # Auto-fill matchup table, save to matchup table : MatchupTable_UserInput
         _ = update_matchup_table(path_matchup_table=path_matchup,
                                  control_dir=control_dir,
                                  traffic_dir=traffic_dir)
 
+        # 3. whether or not to let user confirm the matchup table, in default True to let user confirm
         if self._input_confirm:
             # Tell user to manually check correctness of the Matchup Table
             console.input(":warning: [bold magenta]In the Matchup Table, please check if the turn movement in the "
                           "demand and control data match with bearings in the network data. Enter any key to continue...")
 
+        # 4. Add data to the abstract scenario
         df_volume, df_vol_lookup = generate_turn_demand(path_matchup_table=path_matchup,
                                                         control_dir=control_dir,
                                                         traffic_dir=traffic_dir,)
 
         self.abstract_scenario.Traffic.VolumeLookupTable = df_vol_lookup
-
         self.abstract_scenario.update_AbstractScenario_from_input(df_volume=df_volume)
+        self.abstract_scenario.Network.OpenDriveNetwork.OpenDrive_network = [
+            self.input_config["path_opendrive_net"], ""]
 
-        # UPDATE: delete original TLLogic in the net.xml file and assign new TLS logic from the matchup table
+        # 5. UPDATE: delete original TLLogic in the net.xml file and assign new TLS logic from the matchup table
         net_name = self.input_config["Network"]["NetworkName"]
-        path_sumo_net = pf.path2linux(Path(self.input_config.get("output_dir")) / f"OpenDrive/{net_name}.net.xml")
+        path_opendrive_net = pf.path2linux(Path(self.input_config.get("output_dir")) / f"OpenDrive/{net_name}.net.xml")
         parse_SUMO_TLS_ID(path_matchup_table=path_matchup,
-                          path_net_file=path_sumo_net)
+                          path_net_file=path_opendrive_net)
 
         console.print("\n[bold green]Abstract Scenario successfully generated.")
 
@@ -441,7 +432,7 @@ class RealTwin:
         # TODO according sel_sim to run different simulators
         self.sim = SimPrep()
         for simulator in self.sel_sim:
-            sim_prep.get(simulator)(self.concrete_scenario,
+            sim_prep.get(simulator)(self.input_config,
                                     start_time=start_time,
                                     end_time=end_time,
                                     seed=seed,

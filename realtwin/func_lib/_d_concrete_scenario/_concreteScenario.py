@@ -36,12 +36,12 @@ class ConcreteScenario:
 
     def get_unified_scenario(self, AbsScn):
         """Generate Concrete Scenario from Abstract Scenario"""
-        # copy the input_config from AbstractScenario incase it is needed
+        # copy the input_config from AbstractScenario in case it is needed
         self.input_config = AbsScn.input_config
 
         # generate concrete scenario
-        self.Supply.generate_network(AbsScn)
+        self.Supply.generate_network(self.input_config)
         self.Demand.generate_traffic(AbsScn)
-        self.Behavior.ApplicationInterpreter(AbsScn)
+        # self.Behavior.ApplicationInterpreter(AbsScn)
         self.Route.generate_route(AbsScn)
-        self.TrafficControl.generate_control(AbsScn)
+        # self.TrafficControl.generate_control(AbsScn)

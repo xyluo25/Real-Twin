@@ -13,6 +13,7 @@
 class to host Network element of Abstract scenario
 '''
 from pathlib import Path
+from unittest import result
 import osmnx as ox
 import networkx as nx
 import pandas as pd
@@ -22,6 +23,8 @@ import shutil
 from shapely.geometry import Polygon
 import math
 import pyufunc as pf
+import warnings
+import subprocess
 
 
 class Network:
@@ -34,9 +37,139 @@ class Network:
         self.ElevationMap = "No elevation map provided!"
         self.OpenDriveNetwork = OpenDriveNetwork(output_dir=self._output_dir)
 
-    def isEmpty(self):
-        """Check if the Network element is empty"""
-        pass
+
+def create_sumo_net_from_vertices(net_name: str, net_vertices: list[tuple[float, float]], output_dir: str) -> bool:
+    """ Create SUMO Network From Vertices Using OSMRoad Class, download from OpenStreetMap.
+
+    Note:
+        This function will create a sub-directory 'OpenDrive' in the output_dir to save the generated SUMO network files.
+
+    Args:
+        net_name (str): The name of the network.
+        net_vertices (list[tuple[float, float]]): The list of vertices defining the network boundary.
+        output_dir (str): The output directory to save the generated network files.
+
+    Returns:
+        bool: True if the OpenDrive network is created successfully, False otherwise.
+    """
+
+    # TDD
+    if not isinstance(output_dir, (Path | str)):
+        raise ValueError("output_dir must be a string or a Path object")
+
+    if not Path(output_dir).exists():
+        os.makedirs(output_dir, exist_ok=True)
+
+    # create OpenDrive directory in output directory
+    opendrive_dir = pf.path2linux(os.path.join(output_dir, 'OpenDrive'))
+
+    # create output directory if not exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    # Delete existing OpenDrive directory and its contents
+    if os.path.exists(opendrive_dir):
+        shutil.rmtree(opendrive_dir)
+
+    # Create new OpenDrive directory
+    os.makedirs(opendrive_dir, exist_ok=True)
+
+    current_dir = os.getcwd()
+
+    try:
+        # create networkx graph network
+        nx_net = OSMRoad(output_dir=output_dir)
+        nx_net.get_graph(net_vertices)
+        nx_net.add_spread()
+        nx_net.add_num_lane()
+        nx_net.add_missing_value()
+        nx_net.generate_edges()
+        nx_net.generate_nodes()
+
+        # change director to opendrive directory
+        os.chdir(opendrive_dir)
+
+        # get node and edge path
+        path_node = pf.path2linux(os.path.join(output_dir, 'OpenDrive/nodes.nod.xml'))
+        path_edge = pf.path2linux(os.path.join(output_dir, 'OpenDrive/edges.edg.xml'))
+        path_net = pf.path2linux(os.path.join(output_dir, f'OpenDrive/{net_name}.net.xml'))
+
+        # without elevation data
+        cmd = [
+            "netconvert",
+            f'--node-files={path_node}',
+            f'--edge-files={path_edge}',
+            f'--output-file={path_net}',
+            "--roundabouts.guess",
+            "--ramps.guess",
+            "--tls.discard-simple",
+            "--tls.join",
+            "--proj.utm",
+            "--ignore-errors.edge-type",
+        ]
+        # command1 = f'cmd/c "netconvert --node-files={path_node} --edge-files={path_edge}\
+        # --output-file={path_net} --roundabouts.guess --ramps.guess\
+        # --tls.discard-simple --tls.join --proj.utm --ignore-errors.edge-type"'
+        # os.system(command1)
+
+        result = subprocess.run(cmd, capture_output=True, text=True, shell=False)
+        # print("Return code:", result.returncode)
+        # print("STDOUT:\n", result.stdout)
+        # print("STDERR:\n", result.stderr)
+
+        # change back to current directory
+        os.chdir(current_dir)
+
+    except Exception as e:
+        warnings.warn(f"  :Error in creating SUMO network: {e}")
+        return False
+
+    return True
+
+
+def create_opendrive_xodr_from_sumo_net(net_name: str, net_dir: str) -> bool:
+    """Create OpenDrive xodr file from SUMO Network using netconvert.
+
+    Args:
+        net_name (str): The name of the network.
+        net_dir (str): The directory include sub-directory 'OpenDrive', where the SUMO network file is located.
+
+    Note:
+        This function will load sub-directory 'OpenDrive' in the net_dir to find the SUMO network file.
+
+    Returns:
+        bool: True if the OpenDrive network is created successfully, False otherwise.
+    """
+
+    try:
+        # get sumo net path
+        path_opendrive_net = pf.path2linux(os.path.join(net_dir, f'OpenDrive/{net_name}.net.xml'))
+        path_opendrive_xodr = pf.path2linux(os.path.join(net_dir, f'OpenDrive/{net_name}.xodr'))
+
+        if not os.path.exists(net_dir):
+            os.makedirs(net_dir, exist_ok=True)
+
+        if not os.path.exists(Path(net_dir) / 'OpenDrive'):
+            os.makedirs(Path(net_dir) / 'OpenDrive', exist_ok=True)
+
+        # command2 = f'cmd/c "netconvert -s {path_opendrive_net} --opendrive-output={path_opendrive_xodr}"'
+        # os.system(command2)
+
+        cmd = [
+            "netconvert",
+            f"-s {path_opendrive_net}",
+            f"--opendrive-output={path_opendrive_xodr}",
+        ]
+        subprocess.run(cmd, capture_output=True, text=True, shell=False)
+        # print("Return code:", result.returncode)
+        # print("STDOUT:\n", result.stdout)
+        # print("STDERR:\n", result.stderr)
+
+    except Exception as e:
+        warnings.warn(f"  :Error in creating OpenDrive xodr: {e}")
+        return False
+
+    return True
 
 
 class OpenDriveNetwork:
@@ -55,17 +188,15 @@ class OpenDriveNetwork:
         self.OpenDrive_network = []
 
         # create output directory
-        path_openDrive = pf.path2linux(os.path.join(self._output_dir, 'OpenDrive'))
-
-        if not os.path.exists(self._output_dir):
-            os.makedirs(self._output_dir, exist_ok=True)
-
-        # Create OpenDrive directory
-        if os.path.exists(path_openDrive):
-            # Delete existing directory and its contents
-            shutil.rmtree(path_openDrive)
-        # Create new directory
-        os.makedirs(path_openDrive, exist_ok=True)
+        # path_openDrive = pf.path2linux(os.path.join(self._output_dir, 'OpenDrive'))
+        # if not os.path.exists(self._output_dir):
+        #     os.makedirs(self._output_dir, exist_ok=True)
+        # # Create OpenDrive directory
+        # if os.path.exists(path_openDrive):
+        #     # Delete existing directory and its contents
+        #     shutil.rmtree(path_openDrive)
+        # # Create new directory
+        # os.makedirs(path_openDrive, exist_ok=True)
 
     def isEmpty(self):
         """Check if the OpenDriveNetwork element is empty"""
@@ -88,22 +219,6 @@ class OpenDriveNetwork:
 
         self.create_SUMO_network()
         self.create_OpenDrive_network()
-
-        # self.OpenDrive_network = pf.path2linux(f'{path_openDrive}/{self._net_name}.xodr')
-
-        # delete intermediate files         ################################################################################# add back
-        # PathDelete1 = os.path.join(OpenDrivePath, '{}.net.xml'.format(Name))
-        # PathDelete2 = os.path.join(OpenDrivePath, '{}_WithElevation.net.xml'.format(Name))
-        # PathDelete3 = os.path.join(OpenDrivePath, 'edges.edg.xml')
-        # PathDelete4 = os.path.join(OpenDrivePath, 'nodes.nod.xml')
-        # if os.path.exists(PathDelete1):
-        #     os.remove(PathDelete1)  # Delete the file
-        # if os.path.exists(PathDelete2):
-        #     os.remove(PathDelete2)  # Delete the file
-        # if os.path.exists(PathDelete3):
-        #     os.remove(PathDelete3)  # Delete the file
-        # if os.path.exists(PathDelete4):
-        #     os.remove(PathDelete4)  # Delete the file
 
     def create_OpenDrive_network(self):
         """Create OpenDrive network from SUMO Network"""

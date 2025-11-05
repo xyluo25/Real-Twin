@@ -26,11 +26,15 @@ class Supply:
         """Check if the Supply object is empty."""
         pass
 
-    def generate_network(self, AbsScn):
+    def generate_network(self, input_config: dict):
         """Generate network data from the abstract scenario."""
-        self.NetworkName = AbsScn.Network.NetworkName
 
-        pd_net = AbsScn.Network.OpenDriveNetwork.OpenDrive_network
-        if isinstance(pd_net, list) and len(pd_net) == 2:
-            self.Network = AbsScn.Network.OpenDriveNetwork.OpenDrive_network[0]
-            self.NetworkWithElevation = AbsScn.Network.OpenDriveNetwork.OpenDrive_network[1]
+        self.NetworkName = input_config.get('Network', {}).get('NetworkName', 'network')
+        self.Network = input_config.get("path_opendrive_net", {})
+        self.NetworkWithElevation = ""
+
+        # self.NetworkName = AbsScn.Network.NetworkName
+        # pd_net = AbsScn.Network.OpenDriveNetwork.OpenDrive_network
+        # if isinstance(pd_net, list) and len(pd_net) == 2:
+        #     self.Network = AbsScn.Network.OpenDriveNetwork.OpenDrive_network[0]
+        #     self.NetworkWithElevation = AbsScn.Network.OpenDriveNetwork.OpenDrive_network[1]

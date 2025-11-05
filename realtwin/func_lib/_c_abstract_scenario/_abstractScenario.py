@@ -20,9 +20,9 @@ from pathlib import Path
 
 # import four elements of AbstractScenario
 from ._traffic import Traffic
-from ._network import Network
+from ._network import Network, create_sumo_net_from_vertices, create_opendrive_xodr_from_sumo_net
 from ._control import Control
-from ._application import Application
+# from ._application import Application
 
 import pandas as pd
 import pyufunc as pf
@@ -208,7 +208,7 @@ class AbstractScenario:
             self.Network.OpenDriveNetwork._ele_map = self.Network.ElevationMap
 
         self.Control = Control()
-        self.Application = Application()
+        # self.Application = Application()
 
     def create_SUMO_network(self):
         """ Create SUMO Network From Vertices"""
@@ -259,21 +259,6 @@ class AbstractScenario:
             warnings.warn("  :input_config is None, no data to update")
             return
 
-        # # update Network
-        # # network_dict = self.input_config.get('Network', None)
-        # if network_dict := self.input_config.get('Network'):
-        #     self.Network.NetworkName = network_dict.get('NetworkName', "network")
-        #     self.Network.NetworkVertices = network_dict.get('NetworkVertices', "")
-        #     self.Network.ElevationMap = network_dict.get('ElevationMap', "No elevation map provided!")
-        #     # update the OpenDriveNetwork output directory
-        #     self.Network._output_dir = self.input_config.get('output_dir', "RT_Network")
-        #     self.Network.OpenDriveNetwork._output_dir = self.Network._output_dir
-        #     # update and crate OpenDriveNetwork
-        #     self.Network.OpenDriveNetwork._net_name = self.Network.NetworkName
-        #     self.Network.OpenDriveNetwork._net_vertices = self.Network.NetworkVertices
-        #     self.Network.OpenDriveNetwork._ele_map = self.Network.ElevationMap
-        #     self.Network.OpenDriveNetwork.setValue()
-
         # update Traffic
         if df_volume is not None:
             self.Traffic.Volume = load_traffic_volume(df_volume)
@@ -302,7 +287,3 @@ class AbstractScenario:
                         f"  :File not found: {path_signal_abs}. No signal data loaded from input file")
             else:
                 raise ValueError("  :Invalid control data in configuration file. ")
-
-    def fillAbstractScenario(self):
-        """Fill the AbstractScenario with the data from the input_config"""
-        pass

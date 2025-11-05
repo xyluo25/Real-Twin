@@ -12,13 +12,21 @@
 
 import os
 from pathlib import Path
+import shutil
 import pyufunc as pf
 
 
 def check_abstract_inputs(input_dir: str) -> bool:
-    """ Check the input directory for the abstract scenario."""
+    """Check if Control and Traffic folders are not empty, and if MatchupTable.xlsx exists.
 
-    # check If Control folder is empty
+    Args:
+        input_dir (str): The directory containing the input files.
+
+    Returns:
+        bool: True if all checks pass.
+    """
+
+    # Check 1: If Control folder is empty
     path_control = pf.path2linux(Path(input_dir) / "Control")
     if not os.path.exists(path_control):
         raise Exception(f"  :Error: Control folder does not exist: {path_control}")
@@ -28,7 +36,7 @@ def check_abstract_inputs(input_dir: str) -> bool:
                         "Please include Synchro UTDF file (signal) inside Control folder"
                         " and add the control file name to the input configuration file.")
 
-    # check If Traffic folder is empty
+    # Check 2: If Traffic folder is empty
     path_traffic = pf.path2linux(Path(input_dir) / "Traffic")
     if not os.path.exists(path_traffic):
         raise Exception(f"  :Error: Traffic folder does not exist: {path_traffic}")
@@ -39,9 +47,15 @@ def check_abstract_inputs(input_dir: str) -> bool:
                         " and add the file names to the MatchupTable.xlsx "
                         "(You will notice the generated MatchupTable.xlsx inside your input folder).")
 
-    # check if the MatchupTable.xlsx exists
+    # Check 3: if the MatchupTable.xlsx exists
     path_matchup = pf.path2linux(Path(input_dir) / "MatchupTable.xlsx")
     if not os.path.exists(path_matchup):
         raise Exception(f"  :Error: Matchup table does not exist: {path_matchup}"
                         "Please generate the Matchup table by run generate_inputs()")
+
+    # Check 4: Update MatchupTable.xlsx if MatchupTable_updated.xlsx exists
+    path_matchup_updated = Path(input_dir) / "MatchupTable_updated.xlsx"
+    if path_matchup_updated.exists():
+        shutil.copy(path_matchup_updated, path_matchup)
+
     return True

@@ -45,15 +45,16 @@ class SUMOPrep:
         # add kwargs to the class
         self.kwargs = kwargs
 
-    def importNetwork(self, ConcreteScn):
+    def importNetwork(self, input_config: dict) -> bool:
         """The function to import the network from the OpenDrive file and convert it to SUMO network file."""
 
         # self.Network = ConcreteScn.Supply.Network
         # self.NetworkWithElevation = ConcreteScn.Supply.NetworkWithElevation
-        NetworkName = ConcreteScn.Supply.NetworkName
+        # NetworkName = ConcreteScn.Supply.NetworkName
+        # path_output = ConcreteScn.input_config.get('output_dir')
 
-        # get output path from the configuration dict
-        path_output = ConcreteScn.input_config.get('output_dir')
+        NetworkName = input_config.get('Network', {}).get('NetworkName', 'network')
+        path_output = input_config.get('output_dir')
 
         self.SUMOPath = pf.path2linux(os.path.join(path_output, 'SUMO'))
         if os.path.exists(self.SUMOPath):
@@ -61,15 +62,15 @@ class SUMOPrep:
         os.mkdir(self.SUMOPath)
 
         # Sumo combine the OpenDrive file to sumo network file
-        path_open_drive = pf.path2linux(os.path.join(path_output, f'OpenDrive/{NetworkName}.xodr'))
+        path_opendrive_xodr = pf.path2linux(os.path.join(path_output, f'OpenDrive/{NetworkName}.xodr'))
         path_sumo_net = pf.path2linux(os.path.join(path_output, f'SUMO/{NetworkName}.net.xml'))
 
-        os.system(f'cmd/c "netconvert --opendrive {path_open_drive}'
+        os.system(f'cmd/c "netconvert --opendrive {path_opendrive_xodr}'
                   f' -o {path_sumo_net} --no-internal-links"')
         self.Network = path_sumo_net
 
-        if ConcreteScn.input_config.get('incl_sumo_net'):
-            shutil.copy(ConcreteScn.input_config["incl_sumo_net"], self.Network)
+        if input_config.get('incl_sumo_net'):
+            shutil.copy(input_config["incl_sumo_net"], self.Network)
 
         # Load the XML file
         tree = ET.parse(self.Network)
@@ -80,7 +81,7 @@ class SUMOPrep:
         # Function to extract road ids from incLanes attribute
         def get_road_ids_from_incLanes(incLanes):
             lane_ids = incLanes.split()
-            road_ids = set(lane_id.split("_")[0] for lane_id in lane_ids)
+            road_ids = {lane_id.split("_")[0] for lane_id in lane_ids}
             return list(road_ids)
 
         # Find all junctions with only one road connecting
@@ -103,15 +104,16 @@ class SUMOPrep:
         # Write the modified tree back to the file
         tree.write(self.Network)
 
-    def importDemand(self, ConcreteScn, SimulationStartTime, SimulationEndTime, SeedSet):
+    def importDemand(self, input_config, SimulationStartTime, SimulationEndTime, SeedSet):
         """The function to import the demand from the demand file and convert it to SUMO demand file."""
 
-        NetworkName = ConcreteScn.Supply.NetworkName
+        # NetworkName = ConcreteScn.Supply.NetworkName
+        NetworkName = input_config.get('Network', {}).get('NetworkName', 'network')
 
         # create turn and inflow and summary df
-        path_matchup_table = pf.path2linux(Path(ConcreteScn.input_config["input_dir"]) / "MatchupTable.xlsx")
-        traffic_dir = pf.path2linux(Path(ConcreteScn.input_config["input_dir"]) / "Traffic")
-        path_net_SUMO = pf.path2linux(Path(ConcreteScn.input_config["input_dir"]) / f"output/SUMO/{NetworkName}.net.xml")
+        path_matchup_table = pf.path2linux(Path(input_config["input_dir"]) / "MatchupTable.xlsx")
+        traffic_dir = pf.path2linux(Path(input_config["input_dir"]) / "Traffic")
+        path_net_SUMO = pf.path2linux(Path(input_config["input_dir"]) / f"output/SUMO/{NetworkName}.net.xml")
         MatchupTable_UserInput = read_MatchupTable(path_matchup_table=path_matchup_table)
         TurnDf, IDRef = generate_turn_demand_cali(path_matchup_table=path_matchup_table, traffic_dir=traffic_dir)
         InflowDf_Calibration, _, N_InflowVariable = generate_inflow(path_net_SUMO,
@@ -157,7 +159,6 @@ class SUMOPrep:
                          encoding='utf-8', xml_declaration=True)
 
         # Create the .turn.xml
-        # TurnDf = ConcreteScn.Route.TurningRatio
         TurnDf['IntervalStart'] = TurnDf['IntervalStart'].astype(float)
         TurnDf['IntervalEnd'] = TurnDf['IntervalEnd'].astype(float)
         TurnDf = TurnDf[(TurnDf['IntervalStart'] >= SimulationStartTime) & (
@@ -236,7 +237,7 @@ class SUMOPrep:
             # add element to the set object
             self.Demand.add(path_sumo_demand)
 
-    def generateConfig(self, ConcreteScn, SimulationStartTime, SimulationEndTime, SeedSet, StepLength):
+    def generateConfig(self, input_config, SimulationStartTime, SimulationEndTime, SeedSet, StepLength):
         """The function to generate the SUMO configuration file for the simulation."""
 
         def prettify(elem):
@@ -252,7 +253,8 @@ class SUMOPrep:
         root.set('xsi:noNamespaceSchemaLocation',
                  'http://sumo.dlr.de/xsd/duarouterConfiguration.xsd')
 
-        NetworkName = ConcreteScn.Supply.NetworkName
+        # NetworkName = ConcreteScn.Supply.NetworkName
+        NetworkName = input_config.get('Network', {}).get('NetworkName', 'network')
         # Add other elements to the root
         for Seed in SeedSet:
             random = ET.SubElement(root, 'random')
@@ -292,18 +294,21 @@ class SUMOPrep:
 
         # 10 XML files 'config_1.smocfg' to 'config_10.smocfg' are created with different seed values
 
-    def importSignal(self, ConcreteScn):
+    def importSignal(self, input_config):
         """The function to import the signal from the signal file and convert it to SUMO signal file."""
 
-        input_dir = ConcreteScn.input_config.get('input_dir')
-        path_output = ConcreteScn.input_config.get('output_dir')
+        # input_dir = ConcreteScn.input_config.get('input_dir')
+        # path_output = ConcreteScn.input_config.get('output_dir')
+        input_dir = input_config.get('input_dir')
+        path_output = input_config.get('output_dir')
+        network_name = input_config.get('Network', {}).get('NetworkName', 'network')
         control_dir = pf.path2linux(Path(input_dir) / 'Control')
         path_MatchupTable = pf.path2linux(os.path.join(input_dir, 'MatchupTable.xlsx'))
-        path_net = pf.path2linux(Path(path_output) / f'SUMO/{ConcreteScn.Supply.NetworkName}.net.xml')
+        path_sumo_net = pf.path2linux(Path(path_output) / f'SUMO/{network_name}.net.xml')
 
         # check if the file exists
-        if not os.path.exists(path_net):
-            raise FileNotFoundError(f"File not found: {path_net}")
+        if not os.path.exists(path_sumo_net):
+            raise FileNotFoundError(f"File not found: {path_sumo_net}")
         if not os.path.exists(path_MatchupTable):
             raise FileNotFoundError(f"File not found: {path_MatchupTable}")
         if not path_MatchupTable.endswith(".xlsx"):
@@ -315,16 +320,16 @@ class SUMOPrep:
 
         # update net file from matchup table before importing signal
         try:
-            update_net_before_signal(path_net=path_net, path_MatchupTable=path_MatchupTable)
+            update_net_before_signal(path_net=path_sumo_net, path_MatchupTable=path_MatchupTable)
         except Exception as e:
             print(f"  :Error in updating SUMO net before importing signal: {e}")
 
         # import signal
         try:
-            signal_flag = sumo_signal_import(path_net=path_net, path_MatchupTable=path_MatchupTable,
+            signal_flag = sumo_signal_import(path_net=path_sumo_net, path_MatchupTable=path_MatchupTable,
                                              FixedTime=FixedTime, control_dir=control_dir)
             if signal_flag:
-                print(f"  :SUMO signal updated at: {path_net}")
+                print(f"  :SUMO signal updated at: {path_sumo_net}")
         except Exception as e:
             raise Exception(f"Error in importing SUMO signal: {e}") from e
 
@@ -451,7 +456,7 @@ def sumo_signal_import(path_net: str, path_MatchupTable: str, FixedTime: bool = 
     SignalDict = process_signal_data(signal_path)
 
     df_lanes = SignalDict['Lanes']
-    target_rows = df_lanes["RECORDNAME"].isin(["Lanes", "Shared","Phase1","PermPhase1","Allow RTOR"])
+    target_rows = df_lanes["RECORDNAME"].isin(["Lanes", "Shared", "Phase1", "PermPhase1", "Allow RTOR"])
     for idx in df_lanes[target_rows].index:
         for col in df_lanes.columns:
             if col != "RECORDNAME" and col != "INTID" and pd.notna(df_lanes.at[idx, col]):

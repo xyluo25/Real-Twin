@@ -53,36 +53,28 @@ def load_input_configs(path_config: str) -> dict:
     with open(path_config, 'r', encoding="utf-8") as yaml_data:
         config = yaml.safe_load(yaml_data)
 
-    # check whether input_dir exists
+    # Check 1: assign input_dir to current working directory if not specified
     if config.get('input_dir') is None:
-        # set input_dir to current working directory if not specified
         config['input_dir'] = pf.path2linux(os.getcwd())
     else:
-
-        # check if the input_dir is a valid path
         if not Path(config['input_dir']).exists():
             config['input_dir'] = pf.path2linux(os.getcwd())
-
-        # convert input_dir to linux format
         config['input_dir'] = pf.path2linux(config['input_dir'])
 
-    # check output_dir from input configuration file
+    # Check 2: assign output_dir to input_dir/output if not specified
     if config.get('output_dir') is None:
-        # set output_dir to input_dir/output if not specified
         config['output_dir'] = pf.path2linux(os.path.join(config['input_dir'], 'output'))
     elif not os.path.exists(config['output_dir']):
         config['output_dir'] = pf.path2linux(os.path.join(config['input_dir'], 'output'))
 
-    # check whether key sections exist in the configuration file
+    # Check 3: if key sections are provided in the configuration file
     key_sections = ["Traffic", 'Network', 'Control']
     for key in key_sections:
         if key not in config:
             console.log(f"[bold]{key} section is not found in the configuration file.")
 
-    # update network bbox if vertices are provided in the input configuration file
+    # Check 4: assign net_bbox from vertices
     if vertices := config.get('Network', {}).get('NetworkVertices'):
-
-        # update vertices to a list of tuples in (lon, lat) format
         if isinstance(vertices, str):
             # Regular expression to extract the coordinate pairs
             pattern = r"\((-?\d+\.\d+),\s*(-?\d+\.\d+)\)"
@@ -104,10 +96,8 @@ def load_input_configs(path_config: str) -> dict:
         elif coord_order == "ambiguous":
             console.log("  :Coordinate order is ambiguous. Assuming (lon, lat) format.")
 
-        # update the vertices in the configuration file
+        # update the vertices bounding box
         config['Network']['NetworkVertices'] = vertices
-
-        # update the bounding box if it is not provided
         bbox = config.get('Network', {}).get('Net_BBox')
         if not bbox:
             config['Network']['Net_BBox'] = get_bbox_from_vertices(vertices)
@@ -144,12 +134,12 @@ def check_demo_data_enabled(config: dict) -> dict:
                     extract_path = os.path.splitext(demo_data_path)[0]
                     os.makedirs(extract_path, exist_ok=True)
                     zip_ref.extractall(config['input_dir'])
-                console.log(
-                    f"  :Demo data {demo_data} extracted to {config['input_dir']}.")
-                # update input directory to the extracted demo data
-                config["input_dir"] = pf.path2linux(
-                    Path(config['input_dir']) / f"{demo_data.lower()}")
+                console.log(f"  :Demo data {demo_data} extracted to {config['input_dir']}.")
+
+                # update input directory to the demo folder
+                config["input_dir"] = pf.path2linux(Path(config['input_dir']) / f"{demo_data.lower()}")
                 config["Network"]["NetworkName"] = demo_data
+
                 # use dummy coordinates to make sure program works (in generate_inputs)
                 config["Network"]["NetworkVertices"] = [[-85.14977588011192, 35.040346288414916],
                                                         [-85.15823020212477,
@@ -158,13 +148,11 @@ def check_demo_data_enabled(config: dict) -> dict:
                                                             35.043293338482925],
                                                         [-85.14986171079225, 35.04018378032611]]
             except Exception as e:
-                console.log(
-                    f"  :Demo data {demo_data} extraction failed for {e}. Demo mode is disabled.")
+                console.log(f"  :Demo data {demo_data} extraction failed for {e}. Demo mode is disabled.")
                 config['demo_data'] = None
         else:
             config['demo_data'] = None
-            console.log(
-                f"Demo data {demo_data} currently not available. Available demo data: {AVAILABLE_DEMO_DATA}")
+            console.log(f"Demo data {demo_data} currently not available. Available demo data: {AVAILABLE_DEMO_DATA}")
             console.log("Demo mode is disabled.")
 
     return config
