@@ -220,14 +220,14 @@ class BayesianOptimization:
 
         for run in range(total_run):
             evaluated_values = self.temp_evaluated_values[run]
-            yv = evaluated_values[np.isfinite(evaluated_values)]
-            ymin, ymax = np.min(yv), np.max(yv)
-            if ymin == ymax:
-                pad = 1e-9 if ymin != 0 else 1.0
-                ymin, ymax = ymin - pad, ymax + pad
+            # yv = evaluated_values[np.isfinite(evaluated_values)]
+            # ymin, ymax = np.min(yv), np.max(yv)
+            # if ymin == ymax:
+            #     pad = 1e-9 if ymin != 0 else 1.0
+            #     ymin, ymax = ymin - pad, ymax + pad
 
-            self.fitness_global_min = min(self.fitness_global_min, ymin)
-            self.fitness_global_max = max(self.fitness_global_max, ymax)
+            # self.fitness_global_min = min(self.fitness_global_min, ymin)
+            # self.fitness_global_max = max(self.fitness_global_max, ymax)
 
             plt.figure(figsize=(8, 5))
             plt.plot(range(1, len(evaluated_values) + 1), evaluated_values, marker='o')
