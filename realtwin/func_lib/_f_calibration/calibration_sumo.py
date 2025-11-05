@@ -38,6 +38,26 @@ def cali_sumo(*, sel_algo: dict = None, input_config: dict = None, verbose: bool
         kwargs: additional arguments for scenario configuration and algorithm configuration update.
             update_turn_flow_algo (dict): update algorithm configuration for turn and inflow calibration.
             update_behavior_algo (dict): update algorithm configuration for behavior calibration.
+            sel_behavior_routes (dict): selected behavior routes for calibration.
+
+    Note:
+        update_turn_flow_algo format (please refer to realtwin_config.yaml for details of each config):
+        update_turn_flow_algo: {"ga_config": {...},
+                                "sa_config": {...},
+                                "ts_config": {...},
+                                "bo_config": {...}}
+
+        update_behavior_algo format (please refer to realtwin_config.yaml for details of each config):
+        {"ga_config": {...},
+         "sa_config": {...},
+         "ts_config": {...},
+         "bo_config": {...}}
+
+        sel_behavior_routes format:
+        {"route_1": {"time": 240,
+                    "edge_list": ["-312", "-293", "-297", "-288"]},
+        "route_2": {"time": 180,
+                    "edge_list": ["-312", "-293", "-297", "-288"]}}
 
     Raises:
         ValueError: if algo_config is not a dict with two levels with keys of 'ga', 'sa', and 'ts'
@@ -116,7 +136,14 @@ def cali_sumo(*, sel_algo: dict = None, input_config: dict = None, verbose: bool
 
 
 def prepare_scenario_config_turn_inflow(input_config: dict) -> dict:
-    """Prepare scenario_config from input_config"""
+    """Prepare scenario_config from input_config
+
+    Args:
+        input_config (dict): the dictionary contain configurations from input yaml file.
+
+    Returns:
+        dict: scenario configuration for turn and inflow calibration.
+    """
 
     scenario_config_dict = input_config.get("Calibration").get("scenario_config")
 
@@ -188,7 +215,24 @@ def prepare_scenario_config_turn_inflow(input_config: dict) -> dict:
 
 
 def prepare_algo_config_turn_inflow(input_config: dict, **kwargs) -> dict:
-    """ Prepare algorithm configuration for turn and inflow calibration from input_config """
+    """ Prepare algorithm configuration for turn and inflow calibration from input_config
+
+    Args:
+        input_config (dict): the dictionary contain configurations from input yaml file.
+        kwargs: additional arguments for algorithm configuration update.
+
+            update_turn_flow_algo (dict): update algorithm configuration for turn and inflow calibration.
+
+    Note:
+        update_turn_flow_algo format (please refer to realtwin_config.yaml for details of each config):
+        update_turn_flow_algo: {"ga_config": {...},
+                                "sa_config": {...},
+                                "ts_config": {...},
+                                "bo_config": {...}}
+
+    Returns:
+        dict: algorithm configuration for turn and inflow calibration.
+    """
 
     # Prepare Algorithm configure: e.g. {"ga": {}, "sa": {}, "ts": {}}
     algo_config_turn_inflow = input_config["Calibration"]["turn_inflow"]
@@ -211,6 +255,24 @@ def prepare_algo_config_turn_inflow(input_config: dict, **kwargs) -> dict:
 
 
 def prepare_scenario_config_behavior(input_config: dict, **kwargs) -> dict:
+    """ Prepare scenario_config from input_config for behavior calibration
+
+    Args:
+        input_config (dict): the dictionary contain configurations from input yaml file.
+        kwargs: additional arguments for scenario configuration update.
+
+            sel_behavior_routes (dict): selected behavior routes for calibration.
+
+    Note:
+        sel_behavior_routes format:
+        {"route_1": {"time": 240,
+                     "edge_list": ["-312", "-293", "-297", "-288"]},
+         "route_2": {"time": 180,
+                     "edge_list": ["-312", "-293", "-297", "-288"]}}
+
+    Returns:
+        dict: scenario configuration for behavior calibration.
+    """
 
     scenario_config_behavior = input_config.get("Calibration").get("scenario_config")
     network_name = input_config.get("Network").get("NetworkName")
@@ -272,7 +334,24 @@ def prepare_scenario_config_behavior(input_config: dict, **kwargs) -> dict:
 
 
 def prepare_algo_config_behavior(input_config: dict, **kwargs) -> dict:
-    """ Prepare algorithm configuration for behavior calibration from input_config """
+    """ Prepare algorithm configuration for behavior calibration from input_config
+
+    Args:
+        input_config (dict): the dictionary contain configurations from input yaml file.
+        kwargs: additional arguments for algorithm configuration update.
+
+            update_behavior_algo (dict): update algorithm configuration for behavior calibration.
+
+    Note:
+        update_behavior_algo format (please refer to realtwin_config.yaml for details of each config):
+        {"ga_config": {...},
+         "sa_config": {...},
+         "ts_config": {...},
+         "bo_config": {...}}
+
+    Returns:
+        dict: algorithm configuration for behavior calibration.
+    """
 
     algo_config_behavior = input_config["Calibration"]["behavior"]
     algo_config_behavior["ga_config"] = input_config["Calibration"]["ga_config"]

@@ -30,6 +30,7 @@ from realtwin.func_lib._f_calibration.algo_sumo.util_cali_turn_inflow import (re
                                                                               generate_turn_demand_cali,
                                                                               generate_inflow,
                                                                               generate_turn_summary)
+from realtwin.func_lib._c_abstract_scenario.rt_demand_generation import generate_turn_demand
 
 
 class SUMOPrep:

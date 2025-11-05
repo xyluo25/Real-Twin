@@ -529,8 +529,3 @@ def generate_turn_demand(*, path_matchup_table: str,
     IDRef = IDRef[IDRef["OpenDriveFromID"].astype(str) != ""]
     IDRef = IDRef[IDRef["OpenDriveToID"].astype(str) != ""]
     return [TurnDf, IDRef]
-
-# if __name__ == "__main__":
-#     path_matchup_table = "./MatchupTable_OpenDrive_with user input.xlsx"
-#     output_dir = "./"
-#     TurnDf, IDRef = generate_turn_demand(path_matchup_table, output_dir="./")

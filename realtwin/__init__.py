@@ -25,7 +25,11 @@ from realtwin.func_lib import (install_sumo,
                                cali_sumo,
                                cali_aimsun,
                                cali_vissim,
-                               load_input_configs)
+                               load_input_configs,
+                               prepare_scenario_config_turn_inflow,
+                               prepare_algo_config_turn_inflow,
+                               prepare_scenario_config_behavior,
+                               prepare_algo_config_behavior)
 
 from realtwin.util_lib.create_venv import venv_create, venv_delete
 from realtwin.util_lib.create_config import prepare_realtwin_configs
@@ -51,6 +55,10 @@ __all__ = [
 
     # func_lib
     'install_sumo', 'SimPrep', 'BehaviorCali', 'TurnInflowCali', 'cali_sumo', 'cali_aimsun', 'cali_vissim',
+    "prepare_scenario_config_turn_inflow",
+    "prepare_algo_config_turn_inflow",
+    "prepare_scenario_config_behavior",
+    "prepare_algo_config_behavior",
 
     # autonomous_veh
     'SimAV',

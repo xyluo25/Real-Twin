@@ -50,7 +50,7 @@ console = Console()
 
 class RealTwin:
     """The real-twin developed by ORNL Applied Research and Mobility System (ARMS) group that
-    enables the simulation of twin-structured cities.
+    enables the simulation of various traffic scenarios.
     """
 
     def __init__(self, input_config_file: str = "", **kwargs):
@@ -58,7 +58,10 @@ class RealTwin:
 
         Args:
             input_config_file (str): The directory containing the input files.
-            kwargs: Additional keyword arguments. Will be used in the future.
+            kwargs: Additional keyword arguments.
+
+                input_confirm (bool): Whether to stop the program to let user confirm input.
+                    Default is True.
         """
 
         # initialize the input directory
@@ -93,14 +96,23 @@ class RealTwin:
 
         Args:
             sel_sim (list): select simulator to be set up. Default is None.
+
                 Currently available options are ["SUMO", "VISSIM", "AIMSUN"].
+
             sel_dir (list): A list of directories to search for the executables. Defaults to None.
+
             strict_sumo_version (str): Whether to strictly check the version is installed.
+
                 if specified, will check and install the version. Default is None.
+
             strict_vissim_version (str): Whether to strictly check the version is installed.
+
                 if specified, will check and install the version. Default is False.
+
             strict_aimsun_version (str): Whether to strictly check the version is installed.
+
                 if specified, will check and install the version. Default is False.
+
             kwargs: Additional keyword arguments.
 
         Examples:
@@ -168,14 +180,18 @@ class RealTwin:
 
         Args:
             incl_sumo_net (str): The path to the updated SUMO network file (.net.xml) provided by the user.
+
                 If provided, the OpenDrive network will be generated based on this SUMO network.
+
                 If not provided, the OpenDrive network will be generated based on the vertices from the config file.
 
         See Also:
-            - How to create configuration file
-            - How to create/update MatchUp table
+            - How to create configuration file:
+                https://real-twin.readthedocs.io/en/latest/pages/realtwin_prepare.html#how-to-prepare-update-configuration-file-required
+
+            - How to create/update MatchUp table:
+
             - How to create/prepare Control and Traffic data
-            - How to download elevation tif data from network BBOX
 
         Returns:
             str: The status of the input generation.
