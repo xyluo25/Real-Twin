@@ -9,16 +9,16 @@ DROP TABLE IF EXISTS demand.od_matrix CASCADE;
 DROP TABLE IF EXISTS demand.centroid_connector CASCADE;
 DROP TABLE IF EXISTS demand.zone CASCADE;
 
--- Signals next
-DROP TABLE IF EXISTS sig.timing_plan_phase CASCADE;
-DROP TABLE IF EXISTS sig.timing_plan CASCADE;
-DROP TABLE IF EXISTS sig.detector CASCADE;
-DROP TABLE IF EXISTS sig.phase_movement CASCADE;
-DROP TABLE IF EXISTS sig.signal_phase CASCADE;
-DROP TABLE IF EXISTS sig.signal_controller CASCADE;
+-- traffic signals next
+DROP TABLE IF EXISTS signal.timing_plan_phase CASCADE;
+DROP TABLE IF EXISTS signal.timing_plan CASCADE;
+DROP TABLE IF EXISTS signal.detector CASCADE;
+DROP TABLE IF EXISTS signal.phase_movement CASCADE;
+DROP TABLE IF EXISTS signal.phase CASCADE;
+DROP TABLE IF EXISTS signal.controller CASCADE;
 
 -- Geometry last
-DROP TABLE IF EXISTS net.movement CASCADE;
-DROP TABLE IF EXISTS net.lane CASCADE;
-DROP TABLE IF EXISTS net.link CASCADE;
-DROP TABLE IF EXISTS net.node CASCADE;
+DROP TABLE IF EXISTS network.movement CASCADE;
+DROP TABLE IF EXISTS network.lane CASCADE;
+DROP TABLE IF EXISTS network.link CASCADE;
+DROP TABLE IF EXISTS network.node CASCADE;

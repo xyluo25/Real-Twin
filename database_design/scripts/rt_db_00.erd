@@ -1,1 +1,90 @@
-<diagram version="1" name="rt_db_00-1.erd" time="202510311235"><entities><data-source id="postgres-jdbc-193c19da2b5-207e22aa9ddfd9e"><entity id="1" name="od_matrix" fq-name="demand.od_matrix" order="0" x="870" y="40"><path name="demand"/><path name="geodb"/></entity><entity id="2" name="turning_flow" fq-name="demand.turning_flow" order="1" x="40" y="362"><path name="demand"/><path name="geodb"/></entity><entity id="3" name="zone" fq-name="demand.&quot;zone&quot;" order="2" x="1240" y="60"><path name="demand"/><path name="geodb"/></entity><entity id="4" name="lane" fq-name="net.lane" order="3" color-bg="204,192,184" x="562" y="490"><path name="net"/><path name="geodb"/></entity><entity id="5" name="link" fq-name="net.link" order="4" color-bg="204,192,184" x="870" y="304"><path name="net"/><path name="geodb"/></entity><entity id="6" name="movement" fq-name="net.movement" order="5" color-bg="204,192,184" x="285" y="342"><path name="net"/><path name="geodb"/></entity><entity id="7" name="node" fq-name="net.node" order="6" color-bg="204,192,184" x="1240" y="384"><path name="net"/><path name="geodb"/></entity><entity id="8" name="detector" fq-name="sig.detector" order="7" color-bg="228,255,181" x="285" y="667"><path name="sig"/><path name="geodb"/></entity><entity id="9" name="phase_movement" fq-name="sig.phase_movement" order="8" color-bg="228,255,181" x="285" y="1115"><path name="sig"/><path name="geodb"/></entity><entity id="10" name="signal_controller" fq-name="sig.signal_controller" order="9" color-bg="228,255,181" x="870" y="688"><path name="sig"/><path name="geodb"/></entity><entity id="11" name="signal_phase" fq-name="sig.signal_phase" order="10" color-bg="228,255,181" x="562" y="1040"><path name="sig"/><path name="geodb"/></entity><entity id="12" name="timing_plan" fq-name="sig.timing_plan" order="11" color-bg="228,255,181" x="562" y="816"><path name="sig"/><path name="geodb"/></entity><entity id="13" name="timing_plan_phase" fq-name="sig.timing_plan_phase" order="12" color-bg="228,255,181" x="285" y="891"><path name="sig"/><path name="geodb"/></entity></data-source></entities><relations><relation name="od_matrix_from_zone_id_fkey" fq-name="demand.od_matrix.od_matrix_from_zone_id_fkey" type="fk" pk-ref="3" fk-ref="1"/><relation name="od_matrix_to_zone_id_fkey" fq-name="demand.od_matrix.od_matrix_to_zone_id_fkey" type="fk" pk-ref="3" fk-ref="1"/><relation name="movement_from_lane_id_fkey" fq-name="net.movement.movement_from_lane_id_fkey" type="fk" pk-ref="4" fk-ref="6"/><relation name="movement_to_lane_id_fkey" fq-name="net.movement.movement_to_lane_id_fkey" type="fk" pk-ref="4" fk-ref="6"/><relation name="detector_lane_id_fkey" fq-name="sig.detector.detector_lane_id_fkey" type="fk" pk-ref="4" fk-ref="8"/><relation name="lane_link_id_fkey" fq-name="net.lane.lane_link_id_fkey" type="fk" pk-ref="5" fk-ref="4"/><relation name="movement_from_link_id_fkey" fq-name="net.movement.movement_from_link_id_fkey" type="fk" pk-ref="5" fk-ref="6"/><relation name="movement_to_link_id_fkey" fq-name="net.movement.movement_to_link_id_fkey" type="fk" pk-ref="5" fk-ref="6"/><relation name="detector_link_id_fkey" fq-name="sig.detector.detector_link_id_fkey" type="fk" pk-ref="5" fk-ref="8"/><relation name="turning_flow_movement_id_fkey" fq-name="demand.turning_flow.turning_flow_movement_id_fkey" type="fk" pk-ref="6" fk-ref="2"/><relation name="od_matrix_from_node_id_fkey" fq-name="demand.od_matrix.od_matrix_from_node_id_fkey" type="fk" pk-ref="7" fk-ref="1"/><relation name="od_matrix_to_node_id_fkey" fq-name="demand.od_matrix.od_matrix_to_node_id_fkey" type="fk" pk-ref="7" fk-ref="1"/><relation name="link_from_node_id_fkey" fq-name="net.link.link_from_node_id_fkey" type="fk" pk-ref="7" fk-ref="5"/><relation name="link_to_node_id_fkey" fq-name="net.link.link_to_node_id_fkey" type="fk" pk-ref="7" fk-ref="5"/><relation name="signal_controller_node_id_fkey" fq-name="sig.signal_controller.signal_controller_node_id_fkey" type="fk" pk-ref="7" fk-ref="10"/><relation name="detector_controller_id_fkey" fq-name="sig.detector.detector_controller_id_fkey" type="fk" pk-ref="10" fk-ref="8"/><relation name="signal_phase_controller_id_fkey" fq-name="sig.signal_phase.signal_phase_controller_id_fkey" type="fk" pk-ref="10" fk-ref="11"/><relation name="timing_plan_controller_id_fkey" fq-name="sig.timing_plan.timing_plan_controller_id_fkey" type="fk" pk-ref="10" fk-ref="12"/><relation name="phase_movement_phase_id_fkey" fq-name="sig.phase_movement.phase_movement_phase_id_fkey" type="fk" pk-ref="11" fk-ref="9"/><relation name="timing_plan_phase_phase_id_fkey" fq-name="sig.timing_plan_phase.timing_plan_phase_phase_id_fkey" type="fk" pk-ref="11" fk-ref="13"/><relation name="timing_plan_phase_plan_id_fkey" fq-name="sig.timing_plan_phase.timing_plan_phase_plan_id_fkey" type="fk" pk-ref="12" fk-ref="13"/></relations></diagram>
+<?xml version="1.0" encoding="UTF-8"?>
+<diagram version="1" name="rt_db_00.erd">
+	<entities>
+		<data-source id="postgres-jdbc-193c19da2b5-207e22aa9ddfd9e">
+			<entity id="1" name="origin_destination" fq-name="demand.origin_destination" order="0" x="1203" y="424">
+				<path name="demand"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="2" name="route" fq-name="demand.route" order="1" x="1557" y="107">
+				<path name="demand"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="3" name="turning_flow" fq-name="demand.turning_flow" order="2" x="685" y="511">
+				<path name="demand"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="4" name="vehicle_trip" fq-name="demand.vehicle_trip" order="3" x="1591" y="478">
+				<path name="demand"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="5" name="lane" fq-name="network.lane" order="4" color-bg="204,192,184" x="173" y="9">
+				<path name="network"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="6" name="link" fq-name="network.link" order="5" color-bg="204,192,184" x="649" y="168">
+				<path name="network"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="7" name="movement" fq-name="network.movement" order="6" color-bg="204,192,184" x="675" y="-97">
+				<path name="network"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="8" name="node" fq-name="network.node" order="7" color-bg="204,192,184" x="1170" y="101">
+				<path name="network"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="9" name="controller" fq-name="signal.controller" order="8" color-bg="228,255,181" x="654" y="751">
+				<path name="signal"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="10" name="detector" fq-name="signal.detector" order="9" color-bg="228,255,181" x="214" y="416">
+				<path name="signal"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="11" name="phase" fq-name="signal.phase" order="10" color-bg="228,255,181" x="687" y="1046">
+				<path name="signal"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="12" name="phase_movement" fq-name="signal.phase_movement" order="11" color-bg="228,255,181" x="464" y="952">
+				<path name="signal"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="13" name="timing_plan" fq-name="signal.timing_plan" order="12" color-bg="228,255,181" x="245" y="748">
+				<path name="signal"/>
+				<path name="geodb"/>
+			</entity>
+			<entity id="14" name="timing_plan_phase" fq-name="signal.timing_plan_phase" order="13" color-bg="228,255,181" x="250" y="1067">
+				<path name="signal"/>
+				<path name="geodb"/>
+			</entity>
+		</data-source>
+	</entities>
+	<relations>
+		<relation name="vehicle_trip_od_id_fkey" fq-name="demand.vehicle_trip.vehicle_trip_od_id_fkey" type="fk" pk-ref="1" fk-ref="4"/>
+		<relation name="vehicle_trip_route_id_fkey" fq-name="demand.vehicle_trip.vehicle_trip_route_id_fkey" type="fk" pk-ref="2" fk-ref="4"/>
+		<relation name="movement_lane_id_from_fkey" fq-name="network.movement.movement_lane_id_from_fkey" type="fk" pk-ref="5" fk-ref="7"/>
+		<relation name="movement_lane_id_to_fkey" fq-name="network.movement.movement_lane_id_to_fkey" type="fk" pk-ref="5" fk-ref="7"/>
+		<relation name="detector_lane_id_fkey" fq-name="signal.detector.detector_lane_id_fkey" type="fk" pk-ref="5" fk-ref="10"/>
+		<relation name="turning_flow_link_id_from_fkey" fq-name="demand.turning_flow.turning_flow_link_id_from_fkey" type="fk" pk-ref="6" fk-ref="3"/>
+		<relation name="turning_flow_link_id_to_fkey" fq-name="demand.turning_flow.turning_flow_link_id_to_fkey" type="fk" pk-ref="6" fk-ref="3"/>
+		<relation name="lane_link_id_fkey" fq-name="network.lane.lane_link_id_fkey" type="fk" pk-ref="6" fk-ref="5"/>
+		<relation name="movement_link_id_from_fkey" fq-name="network.movement.movement_link_id_from_fkey" type="fk" pk-ref="6" fk-ref="7"/>
+		<relation name="movement_link_id_to_fkey" fq-name="network.movement.movement_link_id_to_fkey" type="fk" pk-ref="6" fk-ref="7"/>
+		<relation name="detector_link_id_fkey" fq-name="signal.detector.detector_link_id_fkey" type="fk" pk-ref="6" fk-ref="10"/>
+		<relation name="origin_destination_node_id_from_fkey" fq-name="demand.origin_destination.origin_destination_node_id_from_fkey" type="fk" pk-ref="8" fk-ref="1"/>
+		<relation name="origin_destination_node_id_to_fkey" fq-name="demand.origin_destination.origin_destination_node_id_to_fkey" type="fk" pk-ref="8" fk-ref="1"/>
+		<relation name="route_node_id_from_fkey" fq-name="demand.route.route_node_id_from_fkey" type="fk" pk-ref="8" fk-ref="2"/>
+		<relation name="route_node_id_to_fkey" fq-name="demand.route.route_node_id_to_fkey" type="fk" pk-ref="8" fk-ref="2"/>
+		<relation name="link_node_id_from_fkey" fq-name="network.link.link_node_id_from_fkey" type="fk" pk-ref="8" fk-ref="6"/>
+		<relation name="link_node_id_to_fkey" fq-name="network.link.link_node_id_to_fkey" type="fk" pk-ref="8" fk-ref="6"/>
+		<relation name="movement_node_id_fkey" fq-name="network.movement.movement_node_id_fkey" type="fk" pk-ref="8" fk-ref="7"/>
+		<relation name="controller_node_id_fkey" fq-name="signal.controller.controller_node_id_fkey" type="fk" pk-ref="8" fk-ref="9"/>
+		<relation name="detector_controller_id_fkey" fq-name="signal.detector.detector_controller_id_fkey" type="fk" pk-ref="9" fk-ref="10"/>
+		<relation name="phase_controller_id_fkey" fq-name="signal.phase.phase_controller_id_fkey" type="fk" pk-ref="9" fk-ref="11"/>
+		<relation name="timing_plan_controller_id_fkey" fq-name="signal.timing_plan.timing_plan_controller_id_fkey" type="fk" pk-ref="9" fk-ref="13"/>
+		<relation name="phase_movement_phase_id_fkey" fq-name="signal.phase_movement.phase_movement_phase_id_fkey" type="fk" pk-ref="11" fk-ref="12"/>
+		<relation name="timing_plan_phase_phase_id_fkey" fq-name="signal.timing_plan_phase.timing_plan_phase_phase_id_fkey" type="fk" pk-ref="11" fk-ref="14"/>
+		<relation name="timing_plan_phase_plan_id_fkey" fq-name="signal.timing_plan_phase.timing_plan_phase_plan_id_fkey" type="fk" pk-ref="13" fk-ref="14"/>
+	</relations>
+</diagram>

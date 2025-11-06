@@ -1,0 +1,18 @@
+
+1. how to create ER Diagram from DBeaver (.erd file)
+    1.1 select the geo-spatial DB
+    1.2 right click to create -> Others
+    1.3 select ER Diagram
+    1.4 follow instruction from click in 1.3
+
+2. how to review pre-defined schema values
+    2.1 run script _view_predefined_schema_values.sql
+
+3. how to view field comments for each table
+    3.1 run script _view_table_column_comments.sql
+
+4. how to create / edit / view dummy ER Diagram table (.erd.json)
+    4.1 create file: XXX.erd.json
+    4.2 In VS Code, install ERD Editor extension
+    4.3 open the .erd.json file to create, edit, and view entity relation diagram
+    4.4 ERD Editor can generate ER Diagram directly from sql file
