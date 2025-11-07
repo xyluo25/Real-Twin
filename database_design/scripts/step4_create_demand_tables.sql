@@ -10,21 +10,13 @@ CREATE TABLE demand.turning_flow (
 );
 CREATE INDEX IF NOT EXISTS idx_turn_from_to ON demand.turning_flow (link_id_from, link_id_to);
 
--- path
-CREATE TABLE demand.route (
-  route_id        BIGSERIAL PRIMARY KEY,
-  node_id_from BIGINT NOT NULL REFERENCES network.node (node_id) ON DELETE CASCADE,
-  node_id_to BIGINT NOT NULL REFERENCES network.node (node_id) ON DELETE CASCADE,
-  link_seq       BIGINT[],  -- ordered network.link ids
-  geom  GEOMETRY (LINESTRING, 4326) -- path geometry
-);
-
-
 -- OD data
 CREATE TABLE demand.origin_destination (
     od_id BIGSERIAL PRIMARY KEY,
     node_id_from BIGINT NOT NULL REFERENCES network.node (node_id) ON DELETE CASCADE,
     node_id_to BIGINT NOT NULL REFERENCES network.node (node_id) ON DELETE CASCADE,
+    zone_id_from BIGINT REFERENCES demand.zone (zone_id) ON DELETE SET NULL,
+    zone_id_to BIGINT REFERENCES demand.zone (zone_id) ON DELETE SET NULL,
     veh_type veh_type DEFAULT 'car',
     flow DOUBLE PRECISION, -- optional vehicles in slice or rate
     date DATE NOT NULL,
@@ -37,10 +29,11 @@ CREATE TABLE demand.origin_destination (
 -- vehicle trips
 CREATE TABLE demand.vehicle_trip (
     trip_id BIGSERIAL PRIMARY KEY,
-    route_id BIGINT REFERENCES demand.route (route_id),
     od_id BIGINT REFERENCES demand.origin_destination (od_id),
     depart_time TIMESTAMP NOT NULL,
     veh_type veh_type DEFAULT 'car'
+    link_seq       BIGINT[],  -- ordered network.link ids
+    geom  GEOMETRY (LINESTRING, 4326) -- path geometry
 );
 
 COMMIT;

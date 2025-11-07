@@ -4,10 +4,10 @@
 CREATE TABLE network.node (
     node_id BIGSERIAL PRIMARY KEY,
     node_type node_type DEFAULT NULL, -- intersection, signal, centroid, etc.
-    x DOUBLE PRECISION NOT NULL,
-    y DOUBLE PRECISION NOT NULL,
+    lon DOUBLE PRECISION NOT NULL,
+    lat DOUBLE PRECISION NOT NULL,
     srid INTEGER DEFAULT 4326,
-    geom geometry (Point, 4326) GENERATED ALWAYS AS (ST_SetSRID (ST_MakePoint (x, y), COALESCE(srid, 4326))) STORED
+    geom geometry (Point, 4326) GENERATED ALWAYS AS (ST_SetSRID (ST_MakePoint (lon, lat), COALESCE(srid, 4326))) STORED
 );
 
 CREATE INDEX IF NOT EXISTS idx_node_geom ON network.node USING GIST (geom);
@@ -32,6 +32,7 @@ CREATE TABLE network.link (
     lanes_count INTEGER CHECK (lanes_count >= 0),
     grade_percent DOUBLE PRECISION,
     bearing DOUBLE PRECISION,  -- The bearing in degrees clockwise from true north
+    priority_road BOOLEAN DEFAULT FALSE,
     geom geometry (LineString, 4326)
 );
 
@@ -98,7 +99,15 @@ COMMENT ON COLUMN network.movement.lane_id_from IS 'Lane from which the movement
 COMMENT ON COLUMN network.movement.lane_id_to IS 'Lane to which the movement goes';
 COMMENT ON COLUMN network.movement.turn_type IS 'Type of turn for the movement, e.g., left, through, right, u_turn';
 
-
+-- zone table
+CREATE TABLE demand.zone (
+    zone_id BIGSERIAL PRIMARY KEY,
+    zone_name TEXT,
+    geom geometry (Polygon, 4326)
+);
+COMMENT ON COLUMN demand.zone.zone_id IS 'Unique identifier for each zone';
+COMMENT ON COLUMN demand.zone.zone_name IS 'Name of the zone';
+COMMENT ON COLUMN demand.zone.geom IS 'Geometry of the zone as a Polygon in SRID 4326';
 
 -- Helper function to auto set link length from geometry
 DROP TRIGGER IF EXISTS trg_set_link_length ON network.link;
